@@ -1,3 +1,4 @@
+-- Active: 1774841888489@@127.0.0.1@5432@sipangan
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS prices;
 DROP TABLE IF EXISTS commodities;
