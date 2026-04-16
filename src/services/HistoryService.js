@@ -1,9 +1,11 @@
-const { pool } = require('../../config/database');
+import { pool } from '../config/database.js';
 
-const getHistory = async (req, res, next) => {
-  try {
-    const { commodity, region, start_date, end_date } = req.query;
+class HistoryService {
+  constructor() {
+    this._pool = pool;
+  }
 
+  async getHistory({ commodity, region, start_date, end_date }) {
     let query = `
       SELECT p.id, p.price, p.date, c.name as commodity, c.unit, r.name as region
       FROM prices p
@@ -35,16 +37,11 @@ const getHistory = async (req, res, next) => {
 
     query += ` ORDER BY p.date DESC`;
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (err) {
-    next(err);
+    const result = await this._pool.query(query, params);
+    return result.rows;
   }
-};
 
-const getOverview = async (req, res, next) => {
-  try {
-    // Latest prices for all commodities in all regions
+  async getOverview() {
     const query = `
       SELECT DISTINCT ON (c.id, r.id) 
         p.price, p.date, c.name as commodity, r.name as region
@@ -53,14 +50,9 @@ const getOverview = async (req, res, next) => {
       JOIN regions r ON p.region_id = r.id
       ORDER BY c.id, r.id, p.date DESC
     `;
-    const result = await pool.query(query);
-    res.json(result.rows);
-  } catch (err) {
-    next(err);
+    const result = await this._pool.query(query);
+    return result.rows;
   }
-};
+}
 
-module.exports = {
-  getHistory,
-  getOverview,
-};
+export default HistoryService;
