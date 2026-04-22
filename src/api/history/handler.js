@@ -1,6 +1,7 @@
 class HistoryHandler {
-  constructor(service) {
+  constructor(service, validator) {
     this._service = service;
+    this._validator = validator;
 
     this.getHistoryHandler = this.getHistoryHandler.bind(this);
     this.getOverviewHandler = this.getOverviewHandler.bind(this);
@@ -8,10 +9,12 @@ class HistoryHandler {
 
   async getHistoryHandler(req, res, next) {
     try {
-      const history = await this._service.getHistory(req.query);
+      const validatedQuery = this._validator.validateHistoryQuery(req.query);
+      const result = await this._service.getHistory(validatedQuery);
       res.status(200).json({
         status: 'success',
-        data: history,
+        data: result.items,
+        pagination: result.pagination,
       });
     } catch (error) {
       next(error);

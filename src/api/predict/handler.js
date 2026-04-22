@@ -1,12 +1,14 @@
 class PredictHandler {
-  constructor(service) {
+  constructor(service, validator) {
     this._service = service;
+    this._validator = validator;
 
     this.getPredictionHandler = this.getPredictionHandler.bind(this);
   }
 
   async getPredictionHandler(req, res, next) {
     try {
+      this._validator.validatePredictQuery(req.query);
       const { commodity, region } = req.query;
       const data = await this._service.getPrediction(commodity, region);
       res.status(200).json({
@@ -14,15 +16,10 @@ class PredictHandler {
         data,
       });
     } catch (error) {
-      if (error.message === 'AI Prediction service currently unavailable') {
-        return res.status(503).json({
-          status: 'error',
-          message: error.message,
-        });
-      }
       next(error);
     }
   }
 }
 
 export default PredictHandler;
+

@@ -1,21 +1,21 @@
 import ClientError from '../utils/exceptions/ClientError.js';
 
 const errorHandler = (error, req, res, next) => {
+  // Handle all ClientError subclasses (InvariantError, NotFoundError, ServiceUnavailableError, etc.)
   if (error instanceof ClientError) {
-    const response = res.status(error.statusCode).json({
+    return res.status(error.statusCode).json({
       status: 'fail',
       message: error.message,
     });
-    return response;
   }
 
-  // Server error
-  console.error(error);
-  const response = res.status(500).json({
+  // Unhandled server error — log it but don't leak details to client
+  console.error('[Server Error]', error);
+  return res.status(500).json({
     status: 'error',
     message: 'Maaf, terjadi kegagalan pada server kami.',
   });
-  return response;
 };
 
 export default errorHandler;
+

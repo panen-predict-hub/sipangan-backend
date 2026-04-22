@@ -5,8 +5,8 @@ class HistoryService {
     this._pool = pool;
   }
 
-  async getHistory({ commodity, region, start_date, end_date }) {
-    let query = `
+  async getHistory({ commodity, region, start_date, end_date, page = 1, limit = 20 }) {
+    let baseQuery = `
       SELECT p.id, p.price, p.date, c.name as commodity, c.unit, r.name as region
       FROM prices p
       JOIN commodities c ON p.commodity_id = c.id
@@ -17,28 +17,49 @@ class HistoryService {
 
     if (commodity) {
       params.push(commodity);
-      query += ` AND c.name = $${params.length}`;
+      baseQuery += ` AND c.name = $${params.length}`;
     }
 
     if (region) {
       params.push(region);
-      query += ` AND r.name = $${params.length}`;
+      baseQuery += ` AND r.name = $${params.length}`;
     }
 
     if (start_date) {
       params.push(start_date);
-      query += ` AND p.date >= $${params.length}`;
+      baseQuery += ` AND p.date >= $${params.length}`;
     }
 
     if (end_date) {
       params.push(end_date);
-      query += ` AND p.date <= $${params.length}`;
+      baseQuery += ` AND p.date <= $${params.length}`;
     }
 
-    query += ` ORDER BY p.date DESC`;
+    // Count total rows for pagination metadata
+    const countResult = await this._pool.query(
+      `SELECT COUNT(*) FROM (${baseQuery}) AS total_count`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
 
-    const result = await this._pool.query(query, params);
-    return result.rows;
+    // Apply ordering and pagination
+    const offset = (page - 1) * limit;
+    params.push(limit);
+    const dataQuery = baseQuery + ` ORDER BY p.date DESC LIMIT $${params.length}`;
+    params.push(offset);
+    const finalQuery = dataQuery + ` OFFSET $${params.length}`;
+
+    const result = await this._pool.query(finalQuery, params);
+
+    return {
+      items: result.rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getOverview() {
@@ -56,3 +77,4 @@ class HistoryService {
 }
 
 export default HistoryService;
+

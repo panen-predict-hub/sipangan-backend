@@ -8,7 +8,12 @@ class UsersHandler {
 
   async postUserHandler(req, res, next) {
     try {
-      res.status(201).json({ status: 'success', message: 'User added' });
+      this._validator.validateUserPayload(req.body);
+      const userId = await this._service.addUser(req.body);
+      res.status(201).json({
+        status: 'success',
+        data: { userId },
+      });
     } catch (error) {
       next(error);
     }
@@ -16,3 +21,4 @@ class UsersHandler {
 }
 
 export default UsersHandler;
+

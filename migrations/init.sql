@@ -3,6 +3,16 @@
 DROP TABLE IF EXISTS prices;
 DROP TABLE IF EXISTS commodities;
 DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS users;
+
+-- Create Users table
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Create Regions table
 CREATE TABLE regions (
@@ -31,3 +41,4 @@ CREATE TABLE prices (
 CREATE INDEX idx_prices_commodity ON prices(commodity_id);
 CREATE INDEX idx_prices_region ON prices(region_id);
 CREATE INDEX idx_prices_date ON prices(date);
+
