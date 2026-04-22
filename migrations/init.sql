@@ -17,7 +17,9 @@ CREATE TABLE users (
 -- Create Regions table
 CREATE TABLE regions (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE
+    name VARCHAR(100) NOT NULL UNIQUE,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8)
 );
 
 -- Create Commodities table
