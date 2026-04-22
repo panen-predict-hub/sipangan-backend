@@ -1,0 +1,32 @@
+{
+  "name": "sipangan-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panen-predict-hub/sipangan-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/panen-predict-hub/sipangan-backend/issues"
+  },
+  "homepage": "https://github.com/panen-predict-hub/sipangan-backend#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^18.1.2",
+    "nodemon": "^3.1.14",
+    "pg": "^8.20.0",
+    "redis": "^5.12.1"
+  }
+}
