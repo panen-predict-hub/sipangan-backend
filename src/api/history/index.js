@@ -7,7 +7,7 @@ const HistoryAPI = {
   version: '1.0.0',
   register: (app, { historyService }) => {
     const handler = new HistoryHandler(historyService, HistoryValidator);
-    app.use('/api/v1/history', routes(handler));
+    app.use('/api/v1/prices', routes(handler));
   },
 };
 

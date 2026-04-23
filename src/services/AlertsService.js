@@ -8,36 +8,34 @@ class AlertsService {
 
     // Filter based on region
     if (queryObj.regionId) {
-      queryText += ' WHERE region_id = $1';
+      queryText += ' WHERE region_id = ?';
       queryParams.push(queryObj.regionId);
-      paramIndex++;
     }
 
     // Filter based on commodity
     if (queryObj.commodityId) {
       if (queryObj.regionId) {
-        queryText += ' AND commodity_id = $2';
+        queryText += ' AND commodity_id = ?';
       } else {
-        queryText += ' WHERE commodity_id = $1';
+        queryText += ' WHERE commodity_id = ?';
       }
       queryParams.push(queryObj.commodityId);
-      paramIndex++;
     }
 
     // Filter by price threshold
     if (queryObj.priceThreshold) {
       if (queryObj.regionId || queryObj.commodityId) {
-        queryText += ` AND price >= $${paramIndex}`;
+        queryText += ` AND price >= ?`;
       } else {
-        queryText += ` WHERE price >= $${paramIndex}`;
+        queryText += ` WHERE price >= ?`;
       }
       queryParams.push(queryObj.priceThreshold);
     }
 
     queryText += ' ORDER BY created_at DESC';
 
-    const result = await query(queryText, queryParams);
-    return result.rows;
+    const { rows } = await query(queryText, queryParams);
+    return rows;
   }
 }
 

@@ -115,6 +115,23 @@ const landingTemplate = `
             margin-top: 4rem;
             padding-bottom: 2rem;
         }
+        .docs-btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+        .docs-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
         .status-dot {
             height: 8px;
             width: 8px;
@@ -131,7 +148,8 @@ const landingTemplate = `
         <header>
             <span class="badge">v1.0.0 Stable</span>
             <h1>SIPANGAN API</h1>
-            <p>Sistem Informasi Harga Pangan - Backend Core Service</p>
+            <p>Sistem Informasi Harga Pangan (Komoditas Padi) - Backend Core Service</p>
+            <a href="/api-docs" class="docs-btn">View Full API Documentation (Swagger)</a>
         </header>
         
         <div class="card">
@@ -139,38 +157,28 @@ const landingTemplate = `
             <div class="endpoint-list">
                 <div class="endpoint">
                     <span class="method get">GET</span>
-                    <span class="url">/health</span>
-                    <span class="desc">System Health Status</span>
+                    <span class="url">/api/v1/prices</span>
+                    <span class="desc">Data Riwayat Harga Padi</span>
                 </div>
                 <div class="endpoint">
                     <span class="method get">GET</span>
-                    <span class="url">/api/v1/history</span>
-                    <span class="desc">Commodity Price Data History</span>
-                </div>
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="url">/api/v1/history/overview</span>
-                    <span class="desc">Price Trends Dashboard</span>
+                    <span class="url">/api/v1/commodities</span>
+                    <span class="desc">Daftar Komoditas (Padi/Beras)</span>
                 </div>
                 <div class="endpoint">
                     <span class="method get">GET</span>
                     <span class="url">/api/v1/predict</span>
-                    <span class="desc">AI Price Forecasting</span>
-                </div>
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="url">/api/v1/maps/regions</span>
-                    <span class="desc">East Java Region Coordinates</span>
+                    <span class="desc">Prediksi Harga Padi (AI)</span>
                 </div>
                 <div class="endpoint">
                     <span class="method get">GET</span>
                     <span class="url">/api/v1/alerts</span>
-                    <span class="desc">Real-time Price Alerts</span>
+                    <span class="desc">Peringatan Harga Padi Real-time</span>
                 </div>
                 <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="url">/api/v1/users</span>
-                    <span class="desc">User Account Registration</span>
+                    <span class="method get">GET</span>
+                    <span class="url">/api/v1/maps</span>
+                    <span class="desc">Peta Sebaran Harga {status, lat, lng}</span>
                 </div>
             </div>
         </div>

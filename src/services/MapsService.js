@@ -2,8 +2,9 @@ import { query } from '../config/database.js';
 
 class MapsService {
   async getRegionCoordinates() {
-    const result = await query('SELECT id, name, latitude, longitude FROM regions');
-    return result.rows;
+    // Menambahkan placeholder status (nanti diisi oleh analisis AI)
+    const { rows } = await query("SELECT id, name, latitude as lat, longitude as lng, 'normal' as status FROM regions");
+    return rows;
   }
 }
 

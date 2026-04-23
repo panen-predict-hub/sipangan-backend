@@ -1,4 +1,4 @@
-const { pool } = require('../src/config/database');
+import { pool } from '../src/config/database.js';
 
 const seedData = async () => {
   const client = await pool.connect();
@@ -56,10 +56,6 @@ const seedData = async () => {
     // Seed Commodities
     const commodities = [
       { name: 'Beras Medium', unit: 'kg' },
-      { name: 'Gula Pasir', unit: 'kg' },
-      { name: 'Cabai Merah', unit: 'kg' },
-      { name: 'Daging Sapi', unit: 'kg' },
-      { name: 'Telur Ayam', unit: 'kg' }
     ];
     for (const comm of commodities) {
       await client.query('INSERT INTO commodities (name, unit) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING', [comm.name, comm.unit]);

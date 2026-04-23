@@ -5,16 +5,20 @@ import cors from 'cors';
 // APIs
 import HistoryAPI from './api/history/index.js';
 import PredictAPI from './api/predict/index.js';
-import UsersAPI from './api/users/index.js';
 import AlertsAPI from './api/alerts/index.js';
 import MapsAPI from './api/maps/index.js';
+import CommoditiesAPI from './api/commodities/index.js';
+
+// Swagger
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 
 // Services
 import HistoryService from './services/HistoryService.js';
 import PredictService from './services/PredictService.js';
-import UsersService from './services/UsersService.js';
 import AlertsService from './services/AlertsService.js';
 import MapsService from './services/MapsService.js';
+import CommoditiesService from './services/CommoditiesService.js';
 
 // Middleware
 import errorHandler from './middleware/error-handler.js';
@@ -39,16 +43,19 @@ app.use(express.json());
 // Initialize Services
 const historyService = new HistoryService();
 const predictService = new PredictService();
-const usersService = new UsersService();
 const alertsService = new AlertsService();
 const mapsService = new MapsService();
+const commoditiesService = new CommoditiesService();
 
 // Register API Routes (consistent plugin pattern)
 HistoryAPI.register(app, { historyService });
 PredictAPI.register(app, { predictService });
-UsersAPI.register(app, { usersService });
 AlertsAPI.register(app, { alertsService });
 MapsAPI.register(app, { mapsService });
+CommoditiesAPI.register(app, { commoditiesService });
+
+// Swagger Documentation Route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Default Landing Page (API Repository)
 app.get('/', (req, res) => {
@@ -60,8 +67,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// buatkan supaya bisa menjalankan seed.js di migration
-
+//buatkan endpoint untuk menjalankan seed.js
 app.get('/seed', async (req, res) => {
   try {
     await seed();
