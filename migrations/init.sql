@@ -1,4 +1,4 @@
--- Active: 1774841888489@@127.0.0.1@5432@sipangan
+
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS prices;
 DROP TABLE IF EXISTS commodities;
@@ -7,16 +7,16 @@ DROP TABLE IF EXISTS users;
 
 -- Create Users table
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password TEXT NOT NULL,
+    id VARCHAR(36) PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    fullname VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create Regions table
 CREATE TABLE regions (
-    id SERIAL PRIMARY KEY,
+    id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8)
@@ -24,16 +24,16 @@ CREATE TABLE regions (
 
 -- Create Commodities table
 CREATE TABLE commodities (
-    id SERIAL PRIMARY KEY,
+    id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     unit VARCHAR(20) DEFAULT 'kg'
 );
 
 -- Create Prices table (Time Series)
 CREATE TABLE prices (
-    id SERIAL PRIMARY KEY,
-    commodity_id INT REFERENCES commodities(id) ON DELETE CASCADE,
-    region_id INT REFERENCES regions(id) ON DELETE CASCADE,
+    id VARCHAR(36) PRIMARY KEY,
+    commodity_id VARCHAR(36) REFERENCES commodities(id) ON DELETE CASCADE,
+    region_id VARCHAR(36) REFERENCES regions(id) ON DELETE CASCADE,
     price DECIMAL(12, 2) NOT NULL,
     date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

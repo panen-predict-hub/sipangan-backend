@@ -1,10 +1,9 @@
 import { pool } from '../src/config/database.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const seedData = async () => {
-  const client = await pool.connect();
+  const client = await pool.getConnection();
   try {
-    await client.query('BEGIN');
-
     // Seed Regions
     const regions = [
       { name: 'Kabupaten Bangkalan', lat: -7.0258, lng: 112.7425 },
@@ -47,9 +46,10 @@ const seedData = async () => {
       { name: 'Kota Surabaya', lat: -7.2504, lng: 112.7688 }
     ];
     for (const region of regions) {
-      await client.query(
-        'INSERT INTO regions (name, latitude, longitude) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING',
-        [region.name, region.lat, region.lng]
+      const id = uuidv4();
+      await client.execute(
+        'INSERT IGNORE INTO regions (id, name, latitude, longitude) VALUES (?, ?, ?, ?)',
+        [id, region.name, region.lat, region.lng]
       );
     }
 
@@ -58,34 +58,33 @@ const seedData = async () => {
       { name: 'Beras Medium', unit: 'kg' },
     ];
     for (const comm of commodities) {
-      await client.query('INSERT INTO commodities (name, unit) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING', [comm.name, comm.unit]);
+      const id = uuidv4();
+      await client.execute('INSERT IGNORE INTO commodities (id, name, unit) VALUES (?, ?, ?)', [id, comm.name, comm.unit]);
     }
 
     // Seed Sample Prices (Last 7 days)
-    const resRegions = await client.query('SELECT id FROM regions');
-    const resComms = await client.query('SELECT id FROM commodities');
+    const [resRegions] = await client.execute('SELECT id FROM regions');
+    const [resComms] = await client.execute('SELECT id FROM commodities');
 
-    for (const region of resRegions.rows) {
-      for (const comm of resComms.rows) {
+    for (const region of resRegions) {
+      for (const comm of resComms) {
         for (let i = 0; i < 7; i++) {
+          const id = uuidv4();
           const date = new Date();
           date.setDate(date.getDate() - i);
           const price = Math.floor(Math.random() * (50000 - 10000) + 10000);
-          await client.query(
-            'INSERT INTO prices (commodity_id, region_id, price, date) VALUES ($1, $2, $3, $4)',
-            [comm.id, region.id, price, date]
+          await client.execute(
+            'INSERT INTO prices (id, commodity_id, region_id, price, date) VALUES (?, ?, ?, ?, ?)',
+            [id, comm.id, region.id, price, date]
           );
         }
       }
     }
-
-    await client.query('COMMIT');
     console.log('Seeding completed successfully');
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error('Error seeding data:', err);
   } finally {
-    client.release();
+    if (client) client.release();
     process.exit();
   }
 };

@@ -71,7 +71,7 @@ class HistoryService {
       ) as ranked
       WHERE rn = 1
     `;
-    const [rows] = await this._pool.execute(query);
+    const [rows] = await this._pool.query(query);
     return rows;
   }
 }

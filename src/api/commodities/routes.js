@@ -1,20 +1,13 @@
 import express from 'express';
+import authMiddleware from '../../middleware/auth.js';
 
 const routes = (handler) => {
   const router = express.Router();
 
-  /**
-   * @swagger
-   * /api/v1/commodities:
-   *   get:
-   *     summary: Get list of commodities
-   *     description: Retrieve all available food commodities (e.g., Beras Medium).
-   *     tags: [Commodities]
-   *     responses:
-   *       200:
-   *         description: A list of commodities.
-   */
   router.get('/', handler.getCommoditiesHandler);
+  router.post('/', authMiddleware, handler.postCommodityHandler);
+  router.put('/:id', authMiddleware, handler.putCommodityHandler);
+  router.delete('/:id', authMiddleware, handler.deleteCommodityHandler);
 
   return router;
 };

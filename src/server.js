@@ -8,10 +8,7 @@ import PredictAPI from './api/predict/index.js';
 import AlertsAPI from './api/alerts/index.js';
 import MapsAPI from './api/maps/index.js';
 import CommoditiesAPI from './api/commodities/index.js';
-
-// Swagger
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swagger.js';
+import AuthAPI from './api/auth/index.js';
 
 // Services
 import HistoryService from './services/HistoryService.js';
@@ -19,10 +16,15 @@ import PredictService from './services/PredictService.js';
 import AlertsService from './services/AlertsService.js';
 import MapsService from './services/MapsService.js';
 import CommoditiesService from './services/CommoditiesService.js';
+import UserService from './services/UserService.js';
+import AuthService from './services/AuthService.js';
+
+// Validators
+import AuthValidator from './validator/auth/index.js';
 
 // Middleware
 import errorHandler from './middleware/error-handler.js';
-import landingTemplate from './utils/landing-template.js';
+import apiKeyMiddleware from './middleware/api-key.js';
 
 dotenv.config();
 const app = express();
@@ -36,9 +38,17 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 }));
 app.use(express.json());
+
+// Apply API Key Middleware to all routes except health check and root
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/health') {
+    return next();
+  }
+  apiKeyMiddleware(req, res, next);
+});
 
 // Initialize Services
 const historyService = new HistoryService();
@@ -46,6 +56,8 @@ const predictService = new PredictService();
 const alertsService = new AlertsService();
 const mapsService = new MapsService();
 const commoditiesService = new CommoditiesService();
+const userService = new UserService();
+const authService = new AuthService(userService);
 
 // Register API Routes (consistent plugin pattern)
 HistoryAPI.register(app, { historyService });
@@ -53,28 +65,18 @@ PredictAPI.register(app, { predictService });
 AlertsAPI.register(app, { alertsService });
 MapsAPI.register(app, { mapsService });
 CommoditiesAPI.register(app, { commoditiesService });
+AuthAPI.register(app, { authService, validator: AuthValidator });
 
-// Swagger Documentation Route
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Default Landing Page (API Repository)
+// Default Root Route
 app.get('/', (req, res) => {
-  res.send(landingTemplate);
+  res.status(200).json({
+    message: 'SIPANGAN API is running',
+  });
 });
 
 // Basic Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-//buatkan endpoint untuk menjalankan seed.js
-app.get('/seed', async (req, res) => {
-  try {
-    await seed();
-    res.send('Seed executed');
-  } catch (error) {
-    res.status(500).send('Seed failed');
-  }
 });
 
 // Centralized Error Handling

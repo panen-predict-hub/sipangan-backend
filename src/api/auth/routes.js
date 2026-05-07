@@ -3,7 +3,7 @@ import express from 'express';
 const routes = (handler) => {
   const router = express.Router();
 
-  router.get('/', handler.getAlertsHandler);
+  router.post('/login', handler.postLoginHandler);
 
   return router;
 };

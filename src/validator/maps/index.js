@@ -2,8 +2,8 @@ import Joi from 'joi';
 import InvariantError from '../../utils/exceptions/InvariantError.js';
 
 const MapsQuerySchema = Joi.object({
-  region: Joi.string().trim().optional(),
-});
+  region: Joi.string().trim().max(100).optional(),
+}).unknown(false);
 
 const MapsValidator = {
   validateMapsQuery: (payload) => {
