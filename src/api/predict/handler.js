@@ -8,8 +8,7 @@ class PredictHandler {
 
   async getPredictionHandler(req, res, next) {
     try {
-      this._validator.validatePredictQuery(req.query);
-      const { commodity, region } = req.query;
+      const { commodity, region } = this._validator.validatePredictQuery(req.query);
       const data = await this._service.getPrediction(commodity, region);
       res.status(200).json({
         status: 'success',
@@ -22,4 +21,3 @@ class PredictHandler {
 }
 
 export default PredictHandler;
-

@@ -5,15 +5,26 @@ import cors from 'cors';
 // APIs
 import HistoryAPI from './api/history/index.js';
 import PredictAPI from './api/predict/index.js';
-import UsersAPI from './api/users/index.js';
+import AlertsAPI from './api/alerts/index.js';
+import MapsAPI from './api/maps/index.js';
+import CommoditiesAPI from './api/commodities/index.js';
+import AuthAPI from './api/auth/index.js';
 
 // Services
 import HistoryService from './services/HistoryService.js';
 import PredictService from './services/PredictService.js';
-import UsersService from './services/UsersService.js';
+import AlertsService from './services/AlertsService.js';
+import MapsService from './services/MapsService.js';
+import CommoditiesService from './services/CommoditiesService.js';
+import UserService from './services/UserService.js';
+import AuthService from './services/AuthService.js';
+
+// Validators
+import AuthValidator from './validator/auth/index.js';
 
 // Middleware
 import errorHandler from './middleware/error-handler.js';
+import apiKeyMiddleware from './middleware/api-key.js';
 
 dotenv.config();
 const app = express();
@@ -27,19 +38,41 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 }));
 app.use(express.json());
+
+// Apply API Key Middleware to all routes except health check and root
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/health') {
+    return next();
+  }
+  apiKeyMiddleware(req, res, next);
+});
 
 // Initialize Services
 const historyService = new HistoryService();
 const predictService = new PredictService();
-const usersService = new UsersService();
+const alertsService = new AlertsService();
+const mapsService = new MapsService();
+const commoditiesService = new CommoditiesService();
+const userService = new UserService();
+const authService = new AuthService(userService);
 
 // Register API Routes (consistent plugin pattern)
 HistoryAPI.register(app, { historyService });
 PredictAPI.register(app, { predictService });
-UsersAPI.register(app, { usersService });
+AlertsAPI.register(app, { alertsService });
+MapsAPI.register(app, { mapsService });
+CommoditiesAPI.register(app, { commoditiesService });
+AuthAPI.register(app, { authService, validator: AuthValidator });
+
+// Default Root Route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'SIPANGAN API is running',
+  });
+});
 
 // Basic Health Check
 app.get('/health', (req, res) => {
