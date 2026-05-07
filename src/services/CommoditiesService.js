@@ -1,5 +1,6 @@
 import { pool } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import NotFoundError from '../utils/exceptions/NotFoundError.js';
 
 class CommoditiesService {
   constructor() {
@@ -22,7 +23,7 @@ class CommoditiesService {
     const query = 'UPDATE commodities SET name = ?, unit = ? WHERE id = ?';
     const [result] = await this._pool.execute(query, [name, unit, id]);
     if (result.affectedRows === 0) {
-      throw new Error('Commodity not found');
+      throw new NotFoundError('Komoditas tidak ditemukan');
     }
   }
 
@@ -30,7 +31,7 @@ class CommoditiesService {
     const query = 'DELETE FROM commodities WHERE id = ?';
     const [result] = await this._pool.execute(query, [id]);
     if (result.affectedRows === 0) {
-      throw new Error('Commodity not found');
+      throw new NotFoundError('Komoditas tidak ditemukan');
     }
   }
 }

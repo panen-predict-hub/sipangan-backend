@@ -7,7 +7,7 @@ const PredictAPI = {
   version: '1.0.0',
   register: (app, { predictService }) => {
     const handler = new PredictHandler(predictService, PredictValidator);
-    app.use('/api/v1/predictions', routes(handler));
+    app.use('/api/v1/predict', routes(handler));
   },
 };
 

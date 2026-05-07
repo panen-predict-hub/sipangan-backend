@@ -1,9 +1,18 @@
 import { pool } from '../src/config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
 const seedData = async () => {
   const client = await pool.getConnection();
   try {
+    // Seed Admin User
+    const adminId = uuidv4();
+    const hashedAdminPassword = await bcrypt.hash('admin123', 10);
+    await client.execute(
+      'INSERT IGNORE INTO users (id, username, password, fullname) VALUES (?, ?, ?, ?)',
+      [adminId, 'admin', hashedAdminPassword, 'Administrator']
+    );
+
     // Seed Regions
     const regions = [
       { name: 'Kabupaten Bangkalan', lat: -7.0258, lng: 112.7425 },

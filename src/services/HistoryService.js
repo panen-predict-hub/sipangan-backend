@@ -36,18 +36,22 @@ class HistoryService {
     }
 
     // Count total rows for pagination metadata
-    const countResult = await this._pool.execute(
+    // Use pool.query for better compatibility with nested queries and limits
+    const [countRows] = await this._pool.query(
       `SELECT COUNT(*) as count FROM (${baseQuery}) AS total_count`,
       params
     );
-    const total = parseInt(countResult[0][0].count, 10);
+    const total = parseInt(countRows[0].count, 10);
 
     // Apply ordering and pagination
-    const offset = (page - 1) * limit;
+    const limitNum = Number(limit);
+    const offsetNum = (Number(page) - 1) * limitNum;
+    
     const finalQuery = baseQuery + ` ORDER BY p.date DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    const finalParams = [...params, limitNum, offsetNum];
 
-    const [rows] = await this._pool.execute(finalQuery, params);
+    // Use pool.query here as well to avoid prepared statement issues with LIMIT
+    const [rows] = await this._pool.query(finalQuery, finalParams);
 
     return {
       items: rows,

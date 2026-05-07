@@ -1,3 +1,4 @@
 node_modules
 .env
 SIPANGAN_API.postman_collection.json
+SIPANGAN_API.postman_environment.json

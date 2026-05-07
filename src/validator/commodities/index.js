@@ -14,6 +14,12 @@ const CommoditiesValidator = {
     }
     return value;
   },
+  validateCommodityId: (id) => {
+    const { error } = Joi.string().uuid().validate(id);
+    if (error) {
+      throw new InvariantError('ID komoditas tidak valid (harus UUID)');
+    }
+  },
 };
 
 export default CommoditiesValidator;
