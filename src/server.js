@@ -76,7 +76,10 @@ app.get('/', (req, res) => {
 
 // Basic Health Check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Centralized Error Handling
@@ -85,4 +88,3 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`SIPANGAN Backend listening at http://localhost:${port}`);
 });
-
