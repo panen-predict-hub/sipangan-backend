@@ -25,6 +25,8 @@ import AuthValidator from './validator/auth/index.js';
 // Middleware
 import errorHandler from './middleware/error-handler.js';
 import apiKeyMiddleware from './middleware/api-key.js';
+import { pool } from './config/database.js';
+import redisClient from './config/redis.js';
 
 dotenv.config();
 const app = express();
@@ -74,12 +76,42 @@ app.get('/', (req, res) => {
   });
 });
 
-// Basic Health Check
-app.get('/health', (req, res) => {
-  res.status(200).json({
+// Advanced Health Check
+app.get('/health', async (req, res) => {
+  const healthStatus = {
     status: 'OK',
-    timestamp: new Date().toISOString()
-  });
+    timestamp: new Date().toISOString(),
+    services: {
+      database: 'UNKNOWN',
+      redis: 'UNKNOWN'
+    }
+  };
+
+  // Check Database
+  try {
+    await pool.query('SELECT 1');
+    healthStatus.services.database = 'CONNECTED';
+  } catch (err) {
+    healthStatus.status = 'ERROR';
+    healthStatus.services.database = `DISCONNECTED: ${err.message}`;
+  }
+
+  // Check Redis
+  try {
+    if (redisClient.isOpen) {
+      await redisClient.ping();
+      healthStatus.services.redis = 'CONNECTED';
+    } else {
+      healthStatus.status = 'ERROR';
+      healthStatus.services.redis = 'DISCONNECTED';
+    }
+  } catch (err) {
+    healthStatus.status = 'ERROR';
+    healthStatus.services.redis = `DISCONNECTED: ${err.message}`;
+  }
+
+  const statusCode = healthStatus.status === 'OK' ? 200 : 503;
+  res.status(statusCode).json(healthStatus);
 });
 
 // Centralized Error Handling
