@@ -10,9 +10,24 @@ const HistoryQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 }).unknown(false);
 
+const PricePayloadSchema = Joi.object({
+  commodity_id: Joi.string().trim().max(36).required(),
+  region_id: Joi.string().trim().max(36).required(),
+  price: Joi.number().precision(2).positive().required(),
+  date: Joi.date().iso().required(),
+});
+
 const HistoryValidator = {
   validateHistoryQuery: (payload) => {
     const { error, value } = HistoryQuerySchema.validate(payload, { abortEarly: false });
+    if (error) {
+      throw new InvariantError(error.details.map((d) => d.message).join('; '));
+    }
+    return value;
+  },
+
+  validatePricePayload: (payload) => {
+    const { error, value } = PricePayloadSchema.validate(payload, { abortEarly: false });
     if (error) {
       throw new InvariantError(error.details.map((d) => d.message).join('; '));
     }
