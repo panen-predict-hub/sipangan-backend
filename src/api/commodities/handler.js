@@ -1,5 +1,34 @@
 import { clearCache } from '../../middleware/cache.js';
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Commodity:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: c81b3762-9721-4775-8667-897782b7b55c
+ *         name:
+ *           type: string
+ *           example: Beras Medium
+ *         unit:
+ *           type: string
+ *           example: kg
+ *     CommodityInput:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: Beras Premium
+ *         unit:
+ *           type: string
+ *           example: kg
+ */
+
 class CommoditiesHandler {
   constructor(service, validator) {
     this._service = service;
@@ -10,6 +39,25 @@ class CommoditiesHandler {
     this.deleteCommodityHandler = this.deleteCommodityHandler.bind(this);
   }
 
+  /**
+   * @openapi
+   * /api/v1/commodities:
+   *   get:
+   *     summary: Ambil daftar semua komoditas
+   *     tags: [Commodities]
+   *     responses:
+   *       200:
+   *         description: Daftar komoditas
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status: { type: string, example: success }
+   *                 data:
+   *                   type: array
+   *                   items: { $ref: '#/components/schemas/Commodity' }
+   */
   async getCommoditiesHandler(req, res, next) {
     try {
       const commodities = await this._service.getCommodities();
@@ -22,6 +70,24 @@ class CommoditiesHandler {
     }
   }
 
+  /**
+   * @openapi
+   * /api/v1/commodities:
+   *   post:
+   *     summary: Tambah komoditas baru
+   *     tags: [Commodities]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/CommodityInput'
+   *     responses:
+   *       201:
+   *         description: Komoditas berhasil ditambahkan
+   */
   async postCommodityHandler(req, res, next) {
     try {
       this._validator.validateCommodityPayload(req.body);
@@ -38,6 +104,29 @@ class CommoditiesHandler {
     }
   }
 
+  /**
+   * @openapi
+   * /api/v1/commodities/{id}:
+   *   put:
+   *     summary: Perbarui data komoditas
+   *     tags: [Commodities]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: string }
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/CommodityInput'
+   *     responses:
+   *       200:
+   *         description: Data berhasil diperbarui
+   */
   async putCommodityHandler(req, res, next) {
     try {
       const { id } = req.params;
@@ -54,6 +143,23 @@ class CommoditiesHandler {
     }
   }
 
+  /**
+   * @openapi
+   * /api/v1/commodities/{id}:
+   *   delete:
+   *     summary: Hapus komoditas
+   *     tags: [Commodities]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema: { type: string }
+   *     responses:
+   *       200:
+   *         description: Komoditas berhasil dihapus
+   */
   async deleteCommodityHandler(req, res, next) {
     try {
       const { id } = req.params;
