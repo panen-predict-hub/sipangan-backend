@@ -28,6 +28,22 @@ import apiKeyMiddleware from './middleware/api-key.js';
 import { pool } from './config/database.js';
 import redisClient from './config/redis.js';
 
+// Swagger
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
+
+const swaggerAuth = (req, res, next) => {
+  const auth = { login: process.env.SWAGGER_USER || 'admin', password: process.env.SWAGGER_PASSWORD || 'admin123' };
+  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+
+  if (login && password && login === auth.login && password === auth.password) {
+    return next();
+  }
+  res.set('WWW-Authenticate', 'Basic realm="401"');
+  res.status(401).send('Authentication required.');
+};
+
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -44,13 +60,21 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Apply API Key Middleware to all routes except health check and root
+// Apply API Key Middleware to all routes except health check, root, and swagger
 app.use((req, res, next) => {
-  if (req.path === '/' || req.path === '/health') {
+  if (req.path === '/' || req.path === '/health' || req.path.startsWith('/api-docs')) {
     return next();
   }
   apiKeyMiddleware(req, res, next);
 });
+
+// Swagger Documentation Route (Protected with Basic Auth)
+app.use('/api-docs', swaggerAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    persistAuthorization: true,
+  },
+  customSiteTitle: 'SIPANGAN API Documentation',
+}));
 
 // Initialize Services
 const historyService = new HistoryService();

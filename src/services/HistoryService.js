@@ -1,4 +1,6 @@
+import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../config/database.js';
+import NotFoundError from '../utils/exceptions/NotFoundError.js';
 
 class HistoryService {
   constructor() {
@@ -36,7 +38,6 @@ class HistoryService {
     }
 
     // Count total rows for pagination metadata
-    // Use pool.query for better compatibility with nested queries and limits
     const [countRows] = await this._pool.query(
       `SELECT COUNT(*) as count FROM (${baseQuery}) AS total_count`,
       params
@@ -50,7 +51,6 @@ class HistoryService {
     const finalQuery = baseQuery + ` ORDER BY p.date DESC LIMIT ? OFFSET ?`;
     const finalParams = [...params, limitNum, offsetNum];
 
-    // Use pool.query here as well to avoid prepared statement issues with LIMIT
     const [rows] = await this._pool.query(finalQuery, finalParams);
 
     return {
@@ -77,6 +77,34 @@ class HistoryService {
     `;
     const [rows] = await this._pool.query(query);
     return rows;
+  }
+
+  async addPrice({ commodity_id, region_id, price, date }) {
+    const id = uuidv4();
+    const query = `INSERT INTO prices (id, commodity_id, region_id, price, date) VALUES (?, ?, ?, ?, ?)`;
+    await this._pool.query(query, [id, commodity_id, region_id, price, date]);
+    return id;
+  }
+
+  async updatePrice(id, { commodity_id, region_id, price, date }) {
+    await this.verifyPriceExistence(id);
+    const query = `UPDATE prices SET commodity_id = ?, region_id = ?, price = ?, date = ? WHERE id = ?`;
+    await this._pool.query(query, [commodity_id, region_id, price, date, id]);
+  }
+
+  async deletePrice(id) {
+    await this.verifyPriceExistence(id);
+    const query = `DELETE FROM prices WHERE id = ?`;
+    await this._pool.query(query, [id]);
+  }
+
+  async verifyPriceExistence(id) {
+    const query = `SELECT id FROM prices WHERE id = ?`;
+    const [rows] = await this._pool.query(query, [id]);
+
+    if (!rows.length) {
+      throw new NotFoundError('Data harga tidak ditemukan');
+    }
   }
 }
 

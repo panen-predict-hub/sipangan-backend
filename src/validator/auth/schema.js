@@ -5,4 +5,8 @@ const LoginPayloadSchema = Joi.object({
   password: Joi.string().required(),
 });
 
-export { LoginPayloadSchema };
+const RefreshTokenPayloadSchema = Joi.object({
+  refreshToken: Joi.string().required(),
+});
+
+export { LoginPayloadSchema, RefreshTokenPayloadSchema };
