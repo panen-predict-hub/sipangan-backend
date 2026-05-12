@@ -61,10 +61,10 @@ class HistoryHandler {
 
   /**
    * @openapi
-   * /api/v1/history:
+   * /api/v1/prices:
    *   get:
    *     summary: Ambil riwayat harga pangan
-   *     tags: [History]
+   *     tags: [Prices]
    *     parameters:
    *       - in: query
    *         name: commodity
@@ -74,18 +74,6 @@ class HistoryHandler {
    *         name: region
    *         schema: { type: string }
    *         description: Nama wilayah
-   *       - in: query
-   *         name: start_date
-   *         schema: { type: string, format: date }
-   *       - in: query
-   *         name: end_date
-   *         schema: { type: string, format: date }
-   *       - in: query
-   *         name: page
-   *         schema: { type: integer, default: 1 }
-   *       - in: query
-   *         name: limit
-   *         schema: { type: integer, default: 20 }
    *     responses:
    *       200:
    *         description: Daftar harga pangan
@@ -106,10 +94,10 @@ class HistoryHandler {
 
   /**
    * @openapi
-   * /api/v1/history/overview:
+   * /api/v1/prices/overview:
    *   get:
    *     summary: Ambil ringkasan harga terbaru per komoditas
-   *     tags: [History]
+   *     tags: [Prices]
    *     responses:
    *       200:
    *         description: Data ringkasan harga
@@ -128,10 +116,10 @@ class HistoryHandler {
 
   /**
    * @openapi
-   * /api/v1/history:
+   * /api/v1/prices:
    *   post:
    *     summary: Tambah data harga baru
-   *     tags: [History]
+   *     tags: [Prices]
    *     security:
    *       - bearerAuth: []
    *     requestBody:
@@ -165,10 +153,10 @@ class HistoryHandler {
 
   /**
    * @openapi
-   * /api/v1/history/{id}:
+   * /api/v1/prices/{id}:
    *   put:
    *     summary: Perbarui data harga
-   *     tags: [History]
+   *     tags: [Prices]
    *     security:
    *       - bearerAuth: []
    *     parameters:
@@ -203,10 +191,10 @@ class HistoryHandler {
 
   /**
    * @openapi
-   * /api/v1/history/{id}:
+   * /api/v1/prices/{id}:
    *   delete:
    *     summary: Hapus data harga
-   *     tags: [History]
+   *     tags: [Prices]
    *     security:
    *       - bearerAuth: []
    *     parameters:
