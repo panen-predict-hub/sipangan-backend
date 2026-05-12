@@ -22,7 +22,7 @@ const options = {
         description: 'Development server',
       },
       {
-        url: 'https://sipangan-backend.vercel.app',
+        url: 'https://api.sipangan.subly.my.id',
         description: 'Production server',
       },
     ],
