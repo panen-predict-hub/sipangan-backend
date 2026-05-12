@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { query } from '../config/database.js';
 
 class AuthService {
   constructor(userService) {
@@ -18,7 +19,32 @@ class AuthService {
   }
 
   generateAccessToken(payload) {
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' }); // 15 menit
+  }
+
+  generateRefreshToken(payload) {
+    return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET);
+  }
+
+  async addRefreshToken(token) {
+    await query('INSERT INTO authenticators VALUES (?)', [token]);
+  }
+
+  async verifyRefreshToken(token) {
+    const result = await query('SELECT token FROM authenticators WHERE token = ?', [token]);
+    if (!result.rows.length) {
+      throw new Error('Refresh token tidak valid');
+    }
+
+    try {
+      return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    } catch (err) {
+      throw new Error('Refresh token tidak valid');
+    }
+  }
+
+  async deleteRefreshToken(token) {
+    await query('DELETE FROM authenticators WHERE token = ?', [token]);
   }
 }
 

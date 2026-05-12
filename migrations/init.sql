@@ -39,6 +39,8 @@ CREATE TABLE prices (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE authenticators (token TEXT NOT NULL);
+
 -- Indexing for performance
 CREATE INDEX idx_prices_commodity ON prices(commodity_id);
 CREATE INDEX idx_prices_region ON prices(region_id);

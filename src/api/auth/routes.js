@@ -5,6 +5,8 @@ const routes = (handler) => {
   const router = express.Router();
 
   router.post('/login', loginRateLimiter, handler.postLoginHandler);
+  router.put('/refresh', handler.putRefreshTokenHandler);
+  router.delete('/logout', handler.deleteRefreshTokenHandler);
 
   return router;
 };
