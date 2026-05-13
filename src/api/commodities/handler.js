@@ -94,6 +94,7 @@ class CommoditiesHandler {
       const { name, unit } = req.body;
       const id = await this._service.addCommodity({ name, unit });
       await clearCache('cache:/api/commodities*');
+      await clearCache('cache:/api/v1/prices*');
       res.status(201).json({
         status: 'success',
         message: 'Commodity added successfully',
@@ -134,6 +135,7 @@ class CommoditiesHandler {
       this._validator.validateCommodityPayload(req.body);
       await this._service.updateCommodity(id, req.body);
       await clearCache('cache:/api/commodities*');
+      await clearCache('cache:/api/v1/prices*');
       res.status(200).json({
         status: 'success',
         message: 'Commodity updated successfully',
@@ -166,6 +168,7 @@ class CommoditiesHandler {
       this._validator.validateCommodityId(id);
       await this._service.deleteCommodity(id);
       await clearCache('cache:/api/commodities*');
+      await clearCache('cache:/api/v1/prices*');
       res.status(200).json({
         status: 'success',
         message: 'Commodity deleted successfully',

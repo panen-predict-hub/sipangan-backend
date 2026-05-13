@@ -57,7 +57,17 @@ class PredictHandler {
   async getPredictionHandler(req, res, next) {
     try {
       const { commodity, region } = this._validator.validatePredictQuery(req.query);
-      const data = await this._service.getPrediction(commodity, region);
+      let data = null;
+      
+      try {
+        data = await this._service.getPrediction(commodity, region);
+      } catch (err) {
+        // Jika servis AI mati atau data tidak ada, jangan kirim error 500/503
+        // Kirim saja data null agar frontend tidak crash
+        console.error(`Predict service unavailable for ${commodity} in ${region}:`, err.message);
+        data = null;
+      }
+
       res.status(200).json({
         status: 'success',
         data,

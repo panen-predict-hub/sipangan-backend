@@ -54,7 +54,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : ['http://localhost:3000', 'http://localhost:5173'];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 }));
@@ -77,8 +77,8 @@ app.use('/api-docs', swaggerAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec, 
 }));
 
 // Initialize Services
-const historyService = new HistoryService();
 const predictService = new PredictService();
+const historyService = new HistoryService(predictService);
 const alertsService = new AlertsService();
 const mapsService = new MapsService();
 const commoditiesService = new CommoditiesService();
