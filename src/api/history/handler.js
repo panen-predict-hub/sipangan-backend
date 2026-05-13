@@ -96,18 +96,84 @@ class HistoryHandler {
    * @openapi
    * /api/v1/prices/overview:
    *   get:
-   *     summary: Ambil ringkasan harga terbaru per komoditas
+   *     summary: Ambil ringkasan harga dan status risiko per wilayah (Highest Risk Aggregation)
    *     tags: [Prices]
    *     responses:
    *       200:
-   *         description: Data ringkasan harga
+   *         description: Data ringkasan harga per wilayah
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 status: { type: string, example: success }
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       region: { type: string, example: "Kota Surabaya" }
+   *                       current_price: { type: number, example: 15000 }
+   *                       average_price: { type: number, example: 14500 }
+   *                       predicted_price: { type: number, example: 15500 }
+   *                       status: { type: string, example: "waspada" }
    */
   async getOverviewHandler(req, res, next) {
     try {
-      const overview = await this._service.getOverview();
+      const rawOverview = await this._service.getOverview();
+
+      // Logika Aggregasi "Highest-Risk-Level" per Wilayah
+      const statusPriority = { 'aman': 0, 'normal': 1, 'waspada': 2, 'kritis': 3 };
+
+      const aggregated = rawOverview.reduce((acc, item) => {
+        const region = item.region;
+        const currentPrio = statusPriority[item.status] || 0;
+
+        if (!acc[region]) {
+          acc[region] = {
+            region: region,
+            current_price: item.current_price,
+            average_price: item.average_price,
+            predicted_total: item.predicted_price || 0,
+            predicted_count: item.predicted_price !== null ? 1 : 0,
+            status: item.status,
+            prio: currentPrio,
+            count: 1
+          };
+        } else {
+          // Update status ke yang paling berisiko
+          if (currentPrio > acc[region].prio) {
+            acc[region].prio = currentPrio;
+            acc[region].status = item.status;
+          }
+          // Akumulasi untuk rata-rata
+          acc[region].current_price += item.current_price;
+          acc[region].average_price += item.average_price;
+
+          if (item.predicted_price !== null) {
+            acc[region].predicted_total += item.predicted_price;
+            acc[region].predicted_count += 1;
+          }
+
+          acc[region].count += 1;
+        }
+        return acc;
+      }, {});
+
+      // Final formatting
+      const data = Object.values(aggregated).map((item) => ({
+        region: item.region,
+        current_price: Math.round(item.current_price / item.count),
+        average_price: Math.round(item.average_price / item.count),
+        predicted_price: item.predicted_count > 0
+          ? Math.round(item.predicted_total / item.predicted_count)
+          : null,
+        status: item.status
+      }));
+
       res.status(200).json({
         status: 'success',
-        data: overview,
+        data,
       });
     } catch (error) {
       next(error);
