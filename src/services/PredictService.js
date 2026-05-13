@@ -18,7 +18,6 @@ class PredictService {
       const data = await response.json();
       return data;
     } catch (err) {
-      console.error('FastAPI Error:', err.message);
       throw new ServiceUnavailableError('AI Prediction service currently unavailable');
     }
   }
