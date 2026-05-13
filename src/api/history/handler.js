@@ -1,3 +1,5 @@
+import { clearCache } from '../../middleware/cache.js';
+
 /**
  * @openapi
  * components:
@@ -212,6 +214,9 @@ class HistoryHandler {
           priceId,
         },
       });
+
+      // Bersihkan cache agar data terbaru muncul di /overview dan /prices
+      await clearCache('cache:/api/v1/prices*');
     } catch (error) {
       next(error);
     }
@@ -250,6 +255,9 @@ class HistoryHandler {
         status: 'success',
         message: 'Data harga berhasil diperbarui',
       });
+
+      // Bersihkan cache agar data terbaru muncul di /overview dan /prices
+      await clearCache('cache:/api/v1/prices*');
     } catch (error) {
       next(error);
     }
@@ -281,6 +289,9 @@ class HistoryHandler {
         status: 'success',
         message: 'Data harga berhasil dihapus',
       });
+
+      // Bersihkan cache agar data terbaru muncul di /overview dan /prices
+      await clearCache('cache:/api/v1/prices*');
     } catch (error) {
       next(error);
     }
