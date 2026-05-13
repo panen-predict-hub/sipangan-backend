@@ -93,14 +93,36 @@ MapsAPI.register(app, { mapsService });
 CommoditiesAPI.register(app, { commoditiesService });
 AuthAPI.register(app, { authService, validator: AuthValidator });
 
-// Default Root Route
+/**
+ * @openapi
+ * /:
+ *   get:
+ *     summary: Default Root Route (Public)
+ *     description: Mengecek apakah API SIPANGAN sudah berjalan.
+ *     tags: [Public]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: API is running
+ */
 app.get('/', (req, res) => {
   res.status(200).json({
     message: 'SIPANGAN API is running',
   });
 });
 
-// Advanced Health Check
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Health Check (Public)
+ *     description: Mengecek status kesehatan database dan redis.
+ *     tags: [Public]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: System is healthy
+ */
 app.get('/health', async (req, res) => {
   const healthStatus = {
     status: 'OK',

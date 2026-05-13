@@ -189,6 +189,7 @@ class HistoryHandler {
    *     summary: Tambah data harga baru
    *     tags: [Prices]
    *     security:
+   *       - apiKeyAuth: []
    *       - bearerAuth: []
    *     requestBody:
    *       required: true
@@ -229,6 +230,7 @@ class HistoryHandler {
    *     summary: Perbarui data harga
    *     tags: [Prices]
    *     security:
+   *       - apiKeyAuth: []
    *       - bearerAuth: []
    *     parameters:
    *       - in: path
@@ -270,6 +272,7 @@ class HistoryHandler {
    *     summary: Hapus data harga
    *     tags: [Prices]
    *     security:
+   *       - apiKeyAuth: []
    *       - bearerAuth: []
    *     parameters:
    *       - in: path

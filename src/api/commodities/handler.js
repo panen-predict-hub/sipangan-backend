@@ -77,6 +77,7 @@ class CommoditiesHandler {
    *     summary: Tambah komoditas baru
    *     tags: [Commodities]
    *     security:
+   *       - apiKeyAuth: []
    *       - bearerAuth: []
    *     requestBody:
    *       required: true
@@ -112,6 +113,7 @@ class CommoditiesHandler {
    *     summary: Perbarui data komoditas
    *     tags: [Commodities]
    *     security:
+   *       - apiKeyAuth: []
    *       - bearerAuth: []
    *     parameters:
    *       - in: path
@@ -152,6 +154,7 @@ class CommoditiesHandler {
    *     summary: Hapus komoditas
    *     tags: [Commodities]
    *     security:
+   *       - apiKeyAuth: []
    *       - bearerAuth: []
    *     parameters:
    *       - in: path
