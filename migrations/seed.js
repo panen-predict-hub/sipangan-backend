@@ -9,8 +9,8 @@ const seedData = async () => {
     const adminId = uuidv4();
     const hashedAdminPassword = await bcrypt.hash('admin123', 10);
     await client.execute(
-      'INSERT IGNORE INTO users (id, username, password, fullname) VALUES (?, ?, ?, ?)',
-      [adminId, 'admin', hashedAdminPassword, 'Administrator']
+      'INSERT IGNORE INTO users (id, username, password, fullname, role) VALUES (?, ?, ?, ?, ?)',
+      [adminId, 'admin', hashedAdminPassword, 'Administrator Utama', 'super_admin']
     );
 
     // Seed Regions
@@ -71,17 +71,25 @@ const seedData = async () => {
       await client.execute('INSERT IGNORE INTO commodities (id, name, unit) VALUES (?, ?, ?)', [id, comm.name, comm.unit]);
     }
 
-    // Seed Sample Prices (Last 7 days)
+    // Seed Sample Prices (Last 120 days)
     const [resRegions] = await client.execute('SELECT id FROM regions');
-    const [resComms] = await client.execute('SELECT id FROM commodities');
+    const [resComms] = await client.execute('SELECT id, name FROM commodities');
 
     for (const region of resRegions) {
       for (const comm of resComms) {
-        for (let i = 0; i < 7; i++) {
+        // More realistic starting price for Beras Medium vs others
+        let basePrice = comm.name.includes('Beras') ? 13000 : 25000;
+        
+        for (let i = 0; i < 120; i++) {
           const id = uuidv4();
           const date = new Date();
           date.setDate(date.getDate() - i);
-          const price = Math.floor(Math.random() * (50000 - 10000) + 10000);
+          
+          // Add some random fluctuation (-500 to +500)
+          basePrice += Math.floor(Math.random() * 1001) - 500;
+          // Keep price in reasonable range
+          const price = Math.max(10000, Math.min(60000, basePrice));
+
           await client.execute(
             'INSERT INTO prices (id, commodity_id, region_id, price, date) VALUES (?, ?, ?, ?, ?)',
             [id, comm.id, region.id, price, date]
