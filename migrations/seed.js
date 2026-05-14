@@ -77,18 +77,34 @@ const seedData = async () => {
 
     for (const region of resRegions) {
       for (const comm of resComms) {
-        // More realistic starting price for Beras Medium vs others
-        let basePrice = comm.name.includes('Beras') ? 13000 : 25000;
+        // Target price for this commodity
+        const targetBasePrice = comm.name.includes('Beras') ? 13500 : 25000;
+        
+        // Initial price for this region (with slight variation)
+        let currentPrice = targetBasePrice + (Math.floor(Math.random() * 2001) - 1000);
         
         for (let i = 0; i < 120; i++) {
           const id = uuidv4();
           const date = new Date();
           date.setDate(date.getDate() - i);
           
-          // Add some random fluctuation (-500 to +500)
-          basePrice += Math.floor(Math.random() * 1001) - 500;
-          // Keep price in reasonable range
-          const price = Math.max(10000, Math.min(60000, basePrice));
+          // 1. Random fluctuation (Volatility)
+          // Beras is usually more stable than other commodities
+          const volatility = comm.name.includes('Beras') ? 150 : 400;
+          const change = (Math.random() * volatility * 2) - volatility;
+          
+          // 2. Mean Reversion (Pull back to target price)
+          // This prevents the price from drifting too far away realistically
+          const pullFactor = 0.05;
+          const pull = (targetBasePrice - currentPrice) * pullFactor;
+          
+          currentPrice += change + pull;
+
+          // 3. Round to nearest 100 to make it look "human" (Indonesian prices usually end in 00)
+          const roundedPrice = Math.round(currentPrice / 100) * 100;
+          
+          // 4. Keep price in reasonable range
+          const price = Math.max(9000, Math.min(75000, roundedPrice));
 
           await client.execute(
             'INSERT INTO prices (id, commodity_id, region_id, price, date) VALUES (?, ?, ?, ?, ?)',
