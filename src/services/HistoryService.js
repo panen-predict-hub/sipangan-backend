@@ -10,7 +10,7 @@ class HistoryService {
 
   async getHistory({ commodity, region, start_date, end_date, page = 1, limit = 20 }) {
     let baseQuery = `
-      SELECT p.id, p.price, p.date, c.name as commodity, c.unit, r.name as region
+      SELECT p.id, p.commodity_id, p.region_id, p.price, p.date, c.name as commodity, c.unit, r.name as region
       FROM prices p
       JOIN commodities c ON p.commodity_id = c.id
       JOIN regions r ON p.region_id = r.id
@@ -65,7 +65,15 @@ class HistoryService {
     };
   }
 
-  async getOverview() {
+  async getOverview(commodityName) {
+    let whereClause = '';
+    const params = [];
+
+    if (commodityName) {
+      whereClause = 'WHERE c.name = ?';
+      params.push(commodityName);
+    }
+
     const query = `
       WITH LatestPrices AS (
         SELECT
@@ -78,6 +86,7 @@ class HistoryService {
         FROM prices p
         JOIN commodities c ON p.commodity_id = c.id
         JOIN regions r ON p.region_id = r.id
+        ${whereClause}
       ),
       AveragePrices AS (
         SELECT
@@ -105,7 +114,7 @@ class HistoryService {
       WHERE lp.rn = 1
     `;
 
-    const [rows] = await this._pool.query(query);
+    const [rows] = await this._pool.query(query, params);
 
     const result = await Promise.all(rows.map(async (row) => {
       let predictedPrice = null; // Default null if prediction is not available

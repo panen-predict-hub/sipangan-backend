@@ -122,7 +122,8 @@ class HistoryHandler {
    */
   async getOverviewHandler(req, res, next) {
     try {
-      const rawOverview = await this._service.getOverview();
+      const { commodity } = req.query;
+      const rawOverview = await this._service.getOverview(commodity);
 
       // Logika Aggregasi "Highest-Risk-Level" per Wilayah
       const statusPriority = { 'aman': 0, 'normal': 1, 'waspada': 2, 'kritis': 3 };
