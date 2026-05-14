@@ -12,14 +12,16 @@
 ## 🚀 Features
 
 - **🔒 Secure Authentication**: Multi-layered security with JWT (Access & Refresh Tokens) and API Key validation.
+- **👑 Hierarchical Admin Management**: Multi-level roles (Super Admin, Admin, Operator) with managed permissions.
 - **🛡️ Rate Limiting**: Brute-force protection on sensitive routes.
+- **📜 Automated Activity Logging**: Audit trail for all critical data changes (Audit Trail).
 - **⚡ Caching**: Integrated Redis caching for optimized performance.
 - **📊 Commodity Management**: CRUD operations for various food commodities.
 - **🔮 Prediction Engine**: Integration with FastAPI-based AI services for harvest and price prediction.
 - **🗺️ Map Services**: GeoJSON data management for agricultural mapping.
 - **📜 Swagger Documentation**: Interactive API documentation protected by basic authentication.
 - **🧪 Unit & Integration Testing**: Comprehensive test suite using Jest and Supertest.
-- **🆔 UUID v7**: Modern, time-ordered unique identifiers for all database records.
+- **🆔 UUID v4**: Modern unique identifiers for all database records.
 
 ## 🛠️ Tech Stack
 

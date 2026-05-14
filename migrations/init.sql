@@ -11,7 +11,20 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     fullname VARCHAR(100) NOT NULL,
+    role ENUM('super_admin', 'admin', 'operator') DEFAULT 'operator',
+    created_by VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Activity Logs table
+CREATE TABLE activity_logs (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    target_id VARCHAR(36),
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Create Regions table

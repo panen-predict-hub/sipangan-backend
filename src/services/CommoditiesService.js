@@ -5,8 +5,9 @@ import InvariantError from '../utils/exceptions/InvariantError.js';
 
 
 class CommoditiesService {
-  constructor() {
+  constructor(logService) {
     this._pool = pool;
+    this._logService = logService;
   }
 
   async getCommodities() {
@@ -14,11 +15,21 @@ class CommoditiesService {
     return rows;
   }
 
-  async addCommodity({ name, unit }) {
+  async addCommodity({ name, unit }, userId) {
     try {
       const id = uuidv4();
       const query = 'INSERT INTO commodities (id, name, unit) VALUES (?, ?, ?)';
       await this._pool.execute(query, [id, name, unit]);
+      
+      if (this._logService && userId) {
+        await this._logService.addLog({
+          userId,
+          action: 'ADD_COMMODITY',
+          targetId: id,
+          details: { name, unit }
+        });
+      }
+
       return id;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
@@ -28,12 +39,21 @@ class CommoditiesService {
     }
   }
 
-  async updateCommodity(id, { name, unit }) {
+  async updateCommodity(id, { name, unit }, userId) {
     try {
       const query = 'UPDATE commodities SET name = ?, unit = ? WHERE id = ?';
       const [result] = await this._pool.execute(query, [name, unit, id]);
       if (result.affectedRows === 0) {
         throw new NotFoundError('Komoditas tidak ditemukan');
+      }
+
+      if (this._logService && userId) {
+        await this._logService.addLog({
+          userId,
+          action: 'UPDATE_COMMODITY',
+          targetId: id,
+          details: { name, unit }
+        });
       }
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
@@ -43,12 +63,20 @@ class CommoditiesService {
     }
   }
 
-  async deleteCommodity(id) {
+  async deleteCommodity(id, userId) {
     try {
       const query = 'DELETE FROM commodities WHERE id = ?';
       const [result] = await this._pool.execute(query, [id]);
       if (result.affectedRows === 0) {
         throw new NotFoundError('Komoditas tidak ditemukan');
+      }
+
+      if (this._logService && userId) {
+        await this._logService.addLog({
+          userId,
+          action: 'DELETE_COMMODITY',
+          targetId: id
+        });
       }
     } catch (error) {
       if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.code === 'ER_ROW_IS_REFERENCED') {

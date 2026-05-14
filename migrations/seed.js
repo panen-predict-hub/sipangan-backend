@@ -9,8 +9,8 @@ const seedData = async () => {
     const adminId = uuidv4();
     const hashedAdminPassword = await bcrypt.hash('admin123', 10);
     await client.execute(
-      'INSERT IGNORE INTO users (id, username, password, fullname) VALUES (?, ?, ?, ?)',
-      [adminId, 'admin', hashedAdminPassword, 'Administrator']
+      'INSERT IGNORE INTO users (id, username, password, fullname, role) VALUES (?, ?, ?, ?, ?)',
+      [adminId, 'admin', hashedAdminPassword, 'Administrator Utama', 'super_admin']
     );
 
     // Seed Regions

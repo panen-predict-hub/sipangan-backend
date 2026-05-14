@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { query } from '../config/database.js';
+import AuthenticationError from '../utils/exceptions/AuthenticationError.js';
+import NotFoundError from '../utils/exceptions/NotFoundError.js';
 
 class AuthService {
   constructor(userService) {
@@ -8,14 +10,21 @@ class AuthService {
   }
 
   async verifyUserCredential(username, password) {
-    const user = await this._userService.getUserByUsername(username);
-    const match = await bcrypt.compare(password, user.password);
+    try {
+      const user = await this._userService.getUserByUsername(username);
+      const match = await bcrypt.compare(password, user.password);
 
-    if (!match) {
-      throw new Error('Invalid credentials');
+      if (!match) {
+        throw new AuthenticationError('Kredensial yang Anda berikan tidak valid');
+      }
+
+      return { id: user.id, username: user.username, role: user.role };
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw new AuthenticationError('Kredensial yang Anda berikan tidak valid');
+      }
+      throw error;
     }
-
-    return { id: user.id, username: user.username };
   }
 
   generateAccessToken(payload) {

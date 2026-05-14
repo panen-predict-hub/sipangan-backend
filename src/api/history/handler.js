@@ -126,53 +126,40 @@ class HistoryHandler {
       const rawOverview = await this._service.getOverview(commodity);
 
       // Logika Aggregasi "Highest-Risk-Level" per Wilayah
-      const statusPriority = { 'aman': 0, 'normal': 1, 'waspada': 2, 'kritis': 3 };
+      const statusPriority = { 'aman': 0, 'waspada': 1, 'kritis': 2 };
 
       const aggregated = rawOverview.reduce((acc, item) => {
-        const region = item.region;
+        const region = item.region_name;
         const currentPrio = statusPriority[item.status] || 0;
 
         if (!acc[region]) {
           acc[region] = {
-            region: region,
+            region_id: item.region_id,
+            region_name: item.region_name,
             current_price: item.current_price,
-            average_price: item.average_price,
-            predicted_total: item.predicted_price || 0,
-            predicted_count: item.predicted_price !== null ? 1 : 0,
+            previous_price: item.previous_price,
+            trend: item.trend,
+            percent_change: item.percent_change,
             status: item.status,
-            prio: currentPrio,
-            count: 1
+            last_update: item.last_update,
+            prio: currentPrio
           };
         } else {
-          // Update status ke yang paling berisiko
+          // Jika tidak ada commodity yang dipilih, ambil data dari komoditas yang paling berisiko
           if (currentPrio > acc[region].prio) {
             acc[region].prio = currentPrio;
             acc[region].status = item.status;
+            acc[region].current_price = item.current_price;
+            acc[region].previous_price = item.previous_price;
+            acc[region].trend = item.trend;
+            acc[region].percent_change = item.percent_change;
+            acc[region].last_update = item.last_update;
           }
-          // Akumulasi untuk rata-rata
-          acc[region].current_price += item.current_price;
-          acc[region].average_price += item.average_price;
-
-          if (item.predicted_price !== null) {
-            acc[region].predicted_total += item.predicted_price;
-            acc[region].predicted_count += 1;
-          }
-
-          acc[region].count += 1;
         }
         return acc;
       }, {});
 
-      // Final formatting
-      const data = Object.values(aggregated).map((item) => ({
-        region: item.region,
-        current_price: Math.round(item.current_price / item.count),
-        average_price: Math.round(item.average_price / item.count),
-        predicted_price: item.predicted_count > 0
-          ? Math.round(item.predicted_total / item.predicted_count)
-          : null,
-        status: item.status
-      }));
+      const data = Object.values(aggregated).map(({ prio, ...rest }) => rest);
 
       res.status(200).json({
         status: 'success',
@@ -207,7 +194,7 @@ class HistoryHandler {
   async postPriceHandler(req, res, next) {
     try {
       const validatedPayload = this._validator.validatePricePayload(req.body);
-      const priceId = await this._service.addPrice(validatedPayload);
+      const priceId = await this._service.addPrice(validatedPayload, req.user.id);
 
       res.status(201).json({
         status: 'success',
@@ -252,7 +239,7 @@ class HistoryHandler {
     try {
       const { id } = req.params;
       const validatedPayload = this._validator.validatePricePayload(req.body);
-      await this._service.updatePrice(id, validatedPayload);
+      await this._service.updatePrice(id, validatedPayload, req.user.id);
 
       res.status(200).json({
         status: 'success',
@@ -287,7 +274,7 @@ class HistoryHandler {
   async deletePriceHandler(req, res, next) {
     try {
       const { id } = req.params;
-      await this._service.deletePrice(id);
+      await this._service.deletePrice(id, req.user.id);
 
       res.status(200).json({
         status: 'success',

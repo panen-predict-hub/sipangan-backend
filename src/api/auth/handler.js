@@ -33,6 +33,10 @@
  *             refreshToken:
  *               type: string
  *               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *             role:
+ *               type: string
+ *               enum: [super_admin, admin, operator]
+ *               example: super_admin
  *     RefreshRequest:
  *       type: object
  *       required:
@@ -95,6 +99,7 @@ class AuthHandler {
         data: {
           accessToken,
           refreshToken,
+          role: user.role,
         },
       });
     } catch (error) {
@@ -126,8 +131,8 @@ class AuthHandler {
       this._validator.validateRefreshTokenPayload(req.body);
       const { refreshToken } = req.body;
 
-      const { id, username } = await this._authService.verifyRefreshToken(refreshToken);
-      const accessToken = this._authService.generateAccessToken({ id, username });
+      const { id, username, role } = await this._authService.verifyRefreshToken(refreshToken);
+      const accessToken = this._authService.generateAccessToken({ id, username, role });
 
       res.status(200).json({
         status: 'success',

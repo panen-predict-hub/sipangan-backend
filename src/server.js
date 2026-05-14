@@ -9,6 +9,8 @@ import AlertsAPI from './api/alerts/index.js';
 import MapsAPI from './api/maps/index.js';
 import CommoditiesAPI from './api/commodities/index.js';
 import AuthAPI from './api/auth/index.js';
+import UsersAPI from './api/users/index.js';
+import LogsAPI from './api/logs/index.js';
 
 // Services
 import HistoryService from './services/HistoryService.js';
@@ -18,6 +20,7 @@ import MapsService from './services/MapsService.js';
 import CommoditiesService from './services/CommoditiesService.js';
 import UserService from './services/UserService.js';
 import AuthService from './services/AuthService.js';
+import LogService from './services/LogService.js';
 
 // Validators
 import AuthValidator from './validator/auth/index.js';
@@ -77,11 +80,12 @@ app.use('/api-docs', swaggerAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec, 
 }));
 
 // Initialize Services
+const logService = new LogService();
 const predictService = new PredictService();
-const historyService = new HistoryService(predictService);
+const historyService = new HistoryService(predictService, logService);
 const alertsService = new AlertsService();
 const mapsService = new MapsService();
-const commoditiesService = new CommoditiesService();
+const commoditiesService = new CommoditiesService(logService);
 const userService = new UserService();
 const authService = new AuthService(userService);
 
@@ -92,6 +96,8 @@ AlertsAPI.register(app, { alertsService });
 MapsAPI.register(app, { mapsService });
 CommoditiesAPI.register(app, { commoditiesService });
 AuthAPI.register(app, { authService, validator: AuthValidator });
+UsersAPI.register(app, { userService, logService });
+LogsAPI.register(app, { logService });
 
 /**
  * @openapi

@@ -3,9 +3,10 @@ import { pool } from '../config/database.js';
 import NotFoundError from '../utils/exceptions/NotFoundError.js';
 
 class HistoryService {
-  constructor(predictService) {
+  constructor(predictService, logService) {
     this._pool = pool;
     this._predictService = predictService;
+    this._logService = logService;
   }
 
   async getHistory({ commodity, region, start_date, end_date, page = 1, limit = 20 }) {
@@ -75,11 +76,12 @@ class HistoryService {
     }
 
     const query = `
-      WITH LatestPrices AS (
+      WITH RankedPrices AS (
         SELECT
             p.commodity_id,
             p.region_id,
-            p.price as current_price,
+            p.price,
+            p.date,
             c.name as commodity_name,
             r.name as region_name,
             ROW_NUMBER() OVER(PARTITION BY p.commodity_id, p.region_id ORDER BY p.date DESC) as rn
@@ -105,40 +107,65 @@ class HistoryService {
         GROUP BY commodity_id, region_id
       )
       SELECT
-          lp.region_name as region,
-          lp.commodity_name as commodity,
-          lp.current_price,
+          rp1.region_id,
+          rp1.region_name,
+          rp1.commodity_name,
+          rp1.price as current_price,
+          rp1.date as last_update,
+          rp2.price as previous_price,
           ap.average_price
-      FROM LatestPrices lp
-      LEFT JOIN AveragePrices ap ON lp.commodity_id = ap.commodity_id AND lp.region_id = ap.region_id
-      WHERE lp.rn = 1
+      FROM RankedPrices rp1
+      LEFT JOIN RankedPrices rp2 ON rp1.commodity_id = rp2.commodity_id AND rp1.region_id = rp2.region_id AND rp2.rn = 2
+      LEFT JOIN AveragePrices ap ON rp1.commodity_id = ap.commodity_id AND rp1.region_id = ap.region_id
+      WHERE rp1.rn = 1
     `;
 
     const [rows] = await this._pool.query(query, params);
 
     const result = await Promise.all(rows.map(async (row) => {
-      let predictedPrice = null; // Default null if prediction is not available
+      let predictedPrice = null;
 
       if (this._predictService) {
         try {
-          const prediction = await this._predictService.getPrediction(row.commodity, row.region);
+          const prediction = await this._predictService.getPrediction(row.commodity_name, row.region_name);
           if (prediction && prediction.predictions && prediction.predictions.length > 0) {
             predictedPrice = prediction.predictions[0].price;
           }
         } catch (error) {
-          console.error(`Prediction failed for ${row.commodity} in ${row.region}:`, error.message);
+          // Prediction is optional
         }
       }
 
-      const status = this._calculateStatus(row.current_price, predictedPrice, row.average_price);
+      const current = parseFloat(row.current_price);
+      const previous = row.previous_price ? parseFloat(row.previous_price) : current;
+      const average = parseFloat(row.average_price || current);
+
+      // Trend Calculation Logic
+      const diff = current - previous;
+      const percentChange = previous !== 0 ? (diff / previous) * 100 : 0;
+      
+      let trend = 'stable';
+      if (percentChange > 2) trend = 'up';
+      else if (percentChange < -2) trend = 'down';
+
+      // Status Calculation
+      const rawStatus = this._calculateStatus(current, predictedPrice, average);
+      
+      // Map to user-requested status: aman, waspada, kritis
+      let status = 'aman';
+      if (rawStatus === 'kritis') status = 'kritis';
+      else if (rawStatus === 'waspada') status = 'waspada';
 
       return {
-        region: row.region,
-        commodity: row.commodity,
-        current_price: parseFloat(row.current_price),
-        average_price: parseFloat(row.average_price || 0),
-        predicted_price: predictedPrice ? parseFloat(predictedPrice) : null,
+        region_id: row.region_id,
+        region_name: row.region_name,
+        commodity_name: row.commodity_name,
+        current_price: Math.round(current),
+        previous_price: Math.round(previous),
+        trend,
+        percent_change: parseFloat(percentChange.toFixed(2)),
         status,
+        last_update: row.last_update,
       };
     }));
 
@@ -168,23 +195,50 @@ class HistoryService {
     return statuses[highestLevel] || 'aman';
   }
 
-  async addPrice({ commodity_id, region_id, price, date }) {
+  async addPrice({ commodity_id, region_id, price, date }, userId) {
     const id = uuidv4();
     const query = `INSERT INTO prices (id, commodity_id, region_id, price, date) VALUES (?, ?, ?, ?, ?)`;
     await this._pool.query(query, [id, commodity_id, region_id, price, date]);
+    
+    if (this._logService && userId) {
+      await this._logService.addLog({
+        userId,
+        action: 'ADD_PRICE',
+        targetId: id,
+        details: { commodity_id, region_id, price, date }
+      });
+    }
+    
     return id;
   }
 
-  async updatePrice(id, { commodity_id, region_id, price, date }) {
+  async updatePrice(id, { commodity_id, region_id, price, date }, userId) {
     await this.verifyPriceExistence(id);
     const query = `UPDATE prices SET commodity_id = ?, region_id = ?, price = ?, date = ? WHERE id = ?`;
     await this._pool.query(query, [commodity_id, region_id, price, date, id]);
+
+    if (this._logService && userId) {
+      await this._logService.addLog({
+        userId,
+        action: 'UPDATE_PRICE',
+        targetId: id,
+        details: { commodity_id, region_id, price, date }
+      });
+    }
   }
 
-  async deletePrice(id) {
+  async deletePrice(id, userId) {
     await this.verifyPriceExistence(id);
     const query = `DELETE FROM prices WHERE id = ?`;
     await this._pool.query(query, [id]);
+
+    if (this._logService && userId) {
+      await this._logService.addLog({
+        userId,
+        action: 'DELETE_PRICE',
+        targetId: id
+      });
+    }
   }
 
   async verifyPriceExistence(id) {
