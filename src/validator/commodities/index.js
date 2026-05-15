@@ -6,9 +6,21 @@ const CommodityPayloadSchema = Joi.object({
   unit: Joi.string().trim().max(20).default('kg'),
 }).unknown(false);
 
+const ThresholdPayloadSchema = Joi.object({
+  waspada_percentage: Joi.number().min(0).max(100).required(),
+  kritis_percentage: Joi.number().min(0).max(100).required(),
+}).unknown(false);
+
 const CommoditiesValidator = {
   validateCommodityPayload: (payload) => {
     const { error, value } = CommodityPayloadSchema.validate(payload, { abortEarly: false });
+    if (error) {
+      throw new InvariantError(error.details.map((d) => d.message).join('; '));
+    }
+    return value;
+  },
+  validateThresholdPayload: (payload) => {
+    const { error, value } = ThresholdPayloadSchema.validate(payload, { abortEarly: false });
     if (error) {
       throw new InvariantError(error.details.map((d) => d.message).join('; '));
     }

@@ -11,15 +11,29 @@ class CommoditiesService {
   }
 
   async getCommodities() {
-    const [rows] = await this._pool.query('SELECT * FROM commodities');
+    const [rows] = await this._pool.query(`
+      SELECT c.*, ct.waspada_percentage, ct.kritis_percentage 
+      FROM commodities c
+      LEFT JOIN commodity_thresholds ct ON c.id = ct.commodity_id
+    `);
     return rows;
   }
 
   async addCommodity({ name, unit }, userId) {
+    const connection = await this._pool.getConnection();
     try {
+      await connection.beginTransaction();
       const id = uuidv4();
       const query = 'INSERT INTO commodities (id, name, unit) VALUES (?, ?, ?)';
-      await this._pool.execute(query, [id, name, unit]);
+      await connection.execute(query, [id, name, unit]);
+      
+      // Add default threshold
+      await connection.execute(
+        'INSERT INTO commodity_thresholds (id, commodity_id) VALUES (?, ?)',
+        [uuidv4(), id]
+      );
+
+      await connection.commit();
       
       if (this._logService && userId) {
         await this._logService.addLog({
@@ -32,10 +46,13 @@ class CommoditiesService {
 
       return id;
     } catch (error) {
+      await connection.rollback();
       if (error.code === 'ER_DUP_ENTRY') {
         throw new InvariantError(`Komoditas dengan nama '${name}' sudah ada.`);
       }
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
@@ -60,6 +77,24 @@ class CommoditiesService {
         throw new InvariantError(`Komoditas dengan nama '${name}' sudah ada.`);
       }
       throw error;
+    }
+  }
+
+  async updateThreshold(commodityId, { waspada_percentage, kritis_percentage }, userId) {
+    const query = `
+      INSERT INTO commodity_thresholds (id, commodity_id, waspada_percentage, kritis_percentage)
+      VALUES (?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE waspada_percentage = VALUES(waspada_percentage), kritis_percentage = VALUES(kritis_percentage)
+    `;
+    await this._pool.execute(query, [uuidv4(), commodityId, waspada_percentage, kritis_percentage]);
+
+    if (this._logService && userId) {
+      await this._logService.addLog({
+        userId,
+        action: 'UPDATE_THRESHOLD',
+        targetId: commodityId,
+        details: { waspada_percentage, kritis_percentage }
+      });
     }
   }
 

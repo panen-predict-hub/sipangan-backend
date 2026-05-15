@@ -83,8 +83,8 @@ app.use('/api-docs', swaggerAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec, 
 // Initialize Services
 const logService = new LogService();
 const predictService = new PredictService();
-const historyService = new HistoryService(predictService, logService);
 const alertsService = new AlertsService();
+const historyService = new HistoryService(predictService, logService, alertsService);
 const mapsService = new MapsService();
 const commoditiesService = new CommoditiesService(logService);
 const userService = new UserService();
