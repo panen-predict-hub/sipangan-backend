@@ -77,43 +77,61 @@ const seedData = async () => {
 
     for (const region of resRegions) {
       for (const comm of resComms) {
-        // Target price for this commodity
         const targetBasePrice = comm.name.includes('Beras') ? 13500 : 25000;
-        
-        // Initial price for this region (with slight variation)
-        let currentPrice = targetBasePrice + (Math.floor(Math.random() * 2001) - 1000);
-        
-        for (let i = 0; i < 120; i++) {
+
+        // Harga awal dihitung 120 hari yang lalu (ditambah sedikit variasi antar daerah)
+        let currentPrice = targetBasePrice + (Math.floor(Math.random() * 1401) - 700);
+
+        // Setiap wilayah akan mendapatkan pola tren yang unik agar grafiknya tidak seragam
+        // 0 = Tren naik lalu turun, 1 = Tren turun lalu naik, 2 = Bergelombang (Siklus)
+        const regionTrendPattern = Math.floor(Math.random() * 3);
+
+        // Loop berjalan MAJU dari 120 hari yang lalu menuju ke HARI INI
+        for (let i = 120; i >= 0; i--) {
           const id = uuidv4();
           const date = new Date();
-          date.setDate(date.getDate() - i);
-          
-          // 1. Random fluctuation (Volatility)
-          // Beras is usually more stable than other commodities
-          const volatility = comm.name.includes('Beras') ? 150 : 400;
-          const change = (Math.random() * volatility * 2) - volatility;
-          
-          // 2. Mean Reversion (Pull back to target price)
-          // This prevents the price from drifting too far away realistically
-          const pullFactor = 0.05;
-          const pull = (targetBasePrice - currentPrice) * pullFactor;
-          
-          currentPrice += change + pull;
+          date.setDate(date.getDate() - i); // i = 120 (masa lalu) s/d i = 0 (hari ini)
 
-          // 3. Round to nearest 100 to make it look "human" (Indonesian prices usually end in 00)
+          // Volatilitas harian alami
+          const volatility = comm.name.includes('Beras') ? 100 : 300;
+          const randomNoise = (Math.random() * volatility * 2) - volatility;
+
+          // Membuat "Trend Driver" artifisial berdasarkan pola wilayah dan waktu (i)
+          let trendDriver = 0;
+
+          if (regionTrendPattern === 0) {
+            // Pola: Naik di awal (stok menipis), turun di akhir (panen raya)
+            trendDriver = i > 50 ? 80 : -90;
+          } else if (regionTrendPattern === 1) {
+            // Pola: Turun di awal, melonjak naik di akhir (efek musiman/hari besar)
+            trendDriver = i > 40 ? -70 : 110;
+          } else {
+            // Pola: Bergelombang (Siklus menggunakan rumus Sinus)
+            // Menggunakan math sinus berdasarkan sisa hari untuk membuat gelombang naik-turun yang halus
+            trendDriver = Math.sin((120 - i) * 0.1) * 120;
+          }
+
+          // Mean Reversion tetap dipasang agar harga tidak menjadi tidak masuk akal (out of bounds)
+          const pullFactor = 0.03;
+          const pull = (targetBasePrice - currentPrice) * pullFactor;
+
+          // Gabungkan pergerakan harga
+          currentPrice += randomNoise + trendDriver + pull;
+
+          // Pembulatan khas Indonesia (Ratusan rupiah)
           const roundedPrice = Math.round(currentPrice / 100) * 100;
-          
-          // 4. Keep price in reasonable range
-          const price = Math.max(9000, Math.min(75000, roundedPrice));
+
+          // Batasan logis harga pasar
+          const finalPrice = Math.max(10500, Math.min(18500, roundedPrice));
 
           await client.execute(
             'INSERT INTO prices (id, commodity_id, region_id, price, date) VALUES (?, ?, ?, ?, ?)',
-            [id, comm.id, region.id, price, date]
+            [id, comm.id, region.id, finalPrice, date]
           );
         }
       }
     }
-    console.log('Seeding completed successfully');
+    console.log('Seeding completed successfully with dynamic trends');
   } catch (err) {
     console.error('Error seeding data:', err);
   } finally {
