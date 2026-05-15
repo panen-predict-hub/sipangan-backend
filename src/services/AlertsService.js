@@ -33,8 +33,8 @@ class AlertsService {
     queryText += ' ORDER BY created_at DESC';
     
     if (queryObj.limit) {
-      queryText += ' LIMIT ?';
-      queryParams.push(parseInt(queryObj.limit, 10) || 20);
+      const limit = parseInt(queryObj.limit, 10) || 20;
+      queryText += ` LIMIT ${limit}`;
     }
 
     const { rows } = await query(queryText, queryParams);

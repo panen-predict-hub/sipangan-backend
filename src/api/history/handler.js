@@ -206,6 +206,7 @@ class HistoryHandler {
 
       // Bersihkan cache agar data terbaru muncul di /overview dan /prices
       await clearCache('cache:/api/v1/prices*');
+      await clearCache('cache:/api/v1/alerts*');
     } catch (error) {
       next(error);
     }
@@ -248,6 +249,7 @@ class HistoryHandler {
 
       // Bersihkan cache agar data terbaru muncul di /overview dan /prices
       await clearCache('cache:/api/v1/prices*');
+      await clearCache('cache:/api/v1/alerts*');
     } catch (error) {
       next(error);
     }
@@ -283,6 +285,7 @@ class HistoryHandler {
 
       // Bersihkan cache agar data terbaru muncul di /overview dan /prices
       await clearCache('cache:/api/v1/prices*');
+      await clearCache('cache:/api/v1/alerts*');
     } catch (error) {
       next(error);
     }

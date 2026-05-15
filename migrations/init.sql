@@ -96,4 +96,3 @@ CREATE TABLE predictions (
     FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
     UNIQUE KEY unique_prediction (commodity_id, region_id, prediction_date)
 );
-

@@ -88,41 +88,30 @@ const seedData = async () => {
         // Harga awal dihitung 120 hari yang lalu (ditambah sedikit variasi antar daerah)
         let currentPrice = targetBasePrice + (Math.floor(Math.random() * 1401) - 700);
 
-        // Setiap wilayah akan mendapatkan pola tren yang unik agar grafiknya tidak seragam
-        // 0 = Tren naik lalu turun, 1 = Tren turun lalu naik, 2 = Bergelombang (Siklus)
-        const regionTrendPattern = Math.floor(Math.random() * 3);
-
         // Loop berjalan MAJU dari 120 hari yang lalu menuju ke HARI INI
         for (let i = 120; i >= 0; i--) {
           const id = uuidv4();
           const date = new Date();
           date.setDate(date.getDate() - i); // i = 120 (masa lalu) s/d i = 0 (hari ini)
 
-          // Volatilitas harian alami
-          const volatility = comm.name.includes('Beras') ? 100 : 300;
-          const randomNoise = (Math.random() * volatility * 2) - volatility;
-
-          // Membuat "Trend Driver" artifisial berdasarkan pola wilayah dan waktu (i)
-          let trendDriver = 0;
-
-          if (regionTrendPattern === 0) {
-            // Pola: Naik di awal (stok menipis), turun di akhir (panen raya)
-            trendDriver = i > 50 ? 80 : -90;
-          } else if (regionTrendPattern === 1) {
-            // Pola: Turun di awal, melonjak naik di akhir (efek musiman/hari besar)
-            trendDriver = i > 40 ? -70 : 110;
+          // Siklus 9 hari: 3 hari naik, 3 hari stabil, 3 hari turun
+          const dayIndex = 120 - i;
+          const cycleStep = dayIndex % 9;
+          
+          let trendChange = 0;
+          if (cycleStep < 3) {
+            // 3 hari mengarah ke atas (Naik 100 s/d 300)
+            trendChange = Math.floor(Math.random() * 201) + 100;
+          } else if (cycleStep < 6) {
+            // 3 hari stabil (Fluktuasi kecil -50 s/d 50)
+            trendChange = Math.floor(Math.random() * 101) - 50;
           } else {
-            // Pola: Bergelombang (Siklus menggunakan rumus Sinus)
-            // Menggunakan math sinus berdasarkan sisa hari untuk membuat gelombang naik-turun yang halus
-            trendDriver = Math.sin((120 - i) * 0.1) * 120;
+            // 3 hari mengarah ke bawah (Turun 100 s/d 300)
+            trendChange = -(Math.floor(Math.random() * 201) + 100);
           }
 
-          // Mean Reversion tetap dipasang agar harga tidak menjadi tidak masuk akal (out of bounds)
-          const pullFactor = 0.03;
-          const pull = (targetBasePrice - currentPrice) * pullFactor;
-
           // Gabungkan pergerakan harga
-          currentPrice += randomNoise + trendDriver + pull;
+          currentPrice += trendChange;
 
           // Pembulatan khas Indonesia (Ratusan rupiah)
           const roundedPrice = Math.round(currentPrice / 100) * 100;
