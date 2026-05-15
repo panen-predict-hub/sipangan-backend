@@ -69,6 +69,12 @@ const seedData = async () => {
     for (const comm of commodities) {
       const id = uuidv4();
       await client.execute('INSERT IGNORE INTO commodities (id, name, unit) VALUES (?, ?, ?)', [id, comm.name, comm.unit]);
+      
+      // Add default threshold
+      await client.execute(
+        'INSERT IGNORE INTO commodity_thresholds (id, commodity_id, waspada_percentage, kritis_percentage) VALUES (?, ?, ?, ?)',
+        [uuidv4(), id, 10.00, 25.00]
+      );
     }
 
     // Seed Sample Prices (Last 120 days)

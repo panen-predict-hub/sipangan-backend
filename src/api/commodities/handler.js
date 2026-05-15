@@ -36,6 +36,7 @@ class CommoditiesHandler {
     this.getCommoditiesHandler = this.getCommoditiesHandler.bind(this);
     this.postCommodityHandler = this.postCommodityHandler.bind(this);
     this.putCommodityHandler = this.putCommodityHandler.bind(this);
+    this.putThresholdHandler = this.putThresholdHandler.bind(this);
     this.deleteCommodityHandler = this.deleteCommodityHandler.bind(this);
   }
 
@@ -141,6 +142,22 @@ class CommoditiesHandler {
       res.status(200).json({
         status: 'success',
         message: 'Commodity updated successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async putThresholdHandler(req, res, next) {
+    try {
+      const { id } = req.params;
+      this._validator.validateCommodityId(id);
+      this._validator.validateThresholdPayload(req.body);
+      await this._service.updateThreshold(id, req.body, req.user.id);
+      await clearCache('cache:/api/v1/commodities*');
+      res.status(200).json({
+        status: 'success',
+        message: 'Commodity threshold updated successfully',
       });
     } catch (error) {
       next(error);

@@ -3,10 +3,11 @@ import { pool } from '../config/database.js';
 import NotFoundError from '../utils/exceptions/NotFoundError.js';
 
 class HistoryService {
-  constructor(predictService, logService) {
+  constructor(predictService, logService, alertsService) {
     this._pool = pool;
     this._predictService = predictService;
     this._logService = logService;
+    this._alertsService = alertsService;
   }
 
   async getHistory({ commodity, region, start_date, end_date, page = 1, limit = 20 }) {
@@ -113,10 +114,13 @@ class HistoryService {
           rp1.price as current_price,
           rp1.date as last_update,
           rp2.price as previous_price,
-          ap.average_price
+          ap.average_price,
+          ct.waspada_percentage,
+          ct.kritis_percentage
       FROM RankedPrices rp1
       LEFT JOIN RankedPrices rp2 ON rp1.commodity_id = rp2.commodity_id AND rp1.region_id = rp2.region_id AND rp2.rn = 2
       LEFT JOIN AveragePrices ap ON rp1.commodity_id = ap.commodity_id AND rp1.region_id = ap.region_id
+      LEFT JOIN commodity_thresholds ct ON rp1.commodity_id = ct.commodity_id
       WHERE rp1.rn = 1
     `;
 
@@ -127,7 +131,12 @@ class HistoryService {
 
       if (this._predictService) {
         try {
-          const prediction = await this._predictService.getPrediction(row.commodity_name, row.region_name);
+          const prediction = await this._predictService.getPrediction(
+            row.commodity_name, 
+            row.region_name, 
+            row.commodity_id, 
+            row.region_id
+          );
           if (prediction && prediction.predictions && prediction.predictions.length > 0) {
             predictedPrice = prediction.predictions[0].price;
           }
@@ -149,7 +158,13 @@ class HistoryService {
       else if (percentChange < -2) trend = 'down';
 
       // Status Calculation
-      const rawStatus = this._calculateStatus(current, predictedPrice, average);
+      const rawStatus = this._calculateStatus(
+        current, 
+        predictedPrice, 
+        average, 
+        row.waspada_percentage, 
+        row.kritis_percentage
+      );
       
       // Map to user-requested status: aman, waspada, kritis
       let status = 'aman';
@@ -172,16 +187,20 @@ class HistoryService {
     return result;
   }
 
-  _calculateStatus(current, predicted, average) {
+  _calculateStatus(current, predicted, average, waspadaPct = 10, kritisPct = 25) {
     if (!average) return 'normal';
 
     const getLevel = (price, avg) => {
       if (price === null || price === undefined) return -1; // Ignore if no data
       const ratio = price / avg;
+      
+      const waspadaThreshold = 1 + (parseFloat(waspadaPct) / 100);
+      const kritisThreshold = 1 + (parseFloat(kritisPct) / 100);
+
       if (ratio <= 1.0) return 0; // aman (<= average)
-      if (ratio <= 1.1) return 1; // normal (up to 10% above average)
-      if (ratio <= 1.25) return 2; // waspada (10-25% above average)
-      return 3; // kritis (> 25% above average)
+      if (ratio <= waspadaThreshold) return 1; // normal
+      if (ratio <= kritisThreshold) return 2; // waspada
+      return 3; // kritis
     };
 
     const currentLevel = getLevel(current, average);
@@ -209,6 +228,25 @@ class HistoryService {
       });
     }
     
+    // trigger alert check
+    if (this._alertsService) {
+      try {
+        const avgQuery = `
+          SELECT AVG(price) as average_price FROM (
+            SELECT price FROM prices 
+            WHERE commodity_id = ? AND region_id = ?
+            ORDER BY date DESC LIMIT 12
+          ) as recent_prices
+        `;
+        const [avgRows] = await this._pool.query(avgQuery, [commodity_id, region_id]);
+        const average_price = avgRows[0]?.average_price;
+        
+        await this._alertsService.checkAndCreateAlert(commodity_id, region_id, price, average_price);
+      } catch (error) {
+        console.error('Failed to process alert:', error);
+      }
+    }
+    
     return id;
   }
 
@@ -224,6 +262,25 @@ class HistoryService {
         targetId: id,
         details: { commodity_id, region_id, price, date }
       });
+    }
+
+    // trigger alert check
+    if (this._alertsService) {
+      try {
+        const avgQuery = `
+          SELECT AVG(price) as average_price FROM (
+            SELECT price FROM prices 
+            WHERE commodity_id = ? AND region_id = ?
+            ORDER BY date DESC LIMIT 12
+          ) as recent_prices
+        `;
+        const [avgRows] = await this._pool.query(avgQuery, [commodity_id, region_id]);
+        const average_price = avgRows[0]?.average_price;
+        
+        await this._alertsService.checkAndCreateAlert(commodity_id, region_id, price, average_price);
+      } catch (error) {
+        console.error('Failed to process alert:', error);
+      }
     }
   }
 
