@@ -17,6 +17,15 @@
  *         type:
  *           type: string
  *           example: warning
+ *         commodity_id:
+ *           type: string
+ *           example: "c-12345"
+ *         region_id:
+ *           type: string
+ *           example: "r-67890"
+ *         price:
+ *           type: number
+ *           example: 15000.50
  *         created_at:
  *           type: string
  *           format: date-time
@@ -39,9 +48,21 @@ class AlertsHandler {
    *     tags: [Alerts]
    *     parameters:
    *       - in: query
-   *         name: region
+   *         name: regionId
    *         schema: { type: string }
-   *         description: Nama wilayah
+   *         description: ID wilayah
+   *       - in: query
+   *         name: commodityId
+   *         schema: { type: string }
+   *         description: ID komoditas
+   *       - in: query
+   *         name: priceThreshold
+   *         schema: { type: number }
+   *         description: Filter peringatan berdasarkan harga
+   *       - in: query
+   *         name: limit
+   *         schema: { type: integer, default: 20 }
+   *         description: Batas jumlah data yang dikembalikan
    *     responses:
    *       200:
    *         description: Daftar peringatan
