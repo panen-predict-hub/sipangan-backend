@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { query } from '../config/database.js';
 import AuthenticationError from '../utils/exceptions/AuthenticationError.js';
+import InvariantError from '../utils/exceptions/InvariantError.js';
 import NotFoundError from '../utils/exceptions/NotFoundError.js';
 
 class AuthService {
@@ -42,13 +43,13 @@ class AuthService {
   async verifyRefreshToken(token) {
     const result = await query('SELECT token FROM authenticators WHERE token = ?', [token]);
     if (!result.rows.length) {
-      throw new Error('Refresh token tidak valid');
+      throw new InvariantError('Refresh token tidak valid');
     }
 
     try {
       return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
     } catch (err) {
-      throw new Error('Refresh token tidak valid');
+      throw new InvariantError('Refresh token tidak valid');
     }
   }
 
