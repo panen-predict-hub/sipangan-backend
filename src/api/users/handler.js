@@ -222,12 +222,14 @@ class UsersHandler {
     try {
       const targetId = req.params.id;
       
+      const targetUser = await this._userService.getUserById(targetId);
       await this._userService.deleteUser(targetId, req.user.id, req.user.role);
 
       await this._logService.addLog({
         userId: req.user.id,
         action: 'DELETE_USER',
         targetId,
+        details: { username: targetUser.username, fullname: targetUser.fullname, role: targetUser.role }
       });
 
       res.json({ status: 'success', message: 'User berhasil dihapus' });

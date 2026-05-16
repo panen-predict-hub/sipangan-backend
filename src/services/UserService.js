@@ -11,7 +11,7 @@ class UserService {
 
   async addUser({ username, password, fullname, role = 'operator', createdBy = null }) {
     // Check if username already exists
-    const [existing] = await this._pool.execute('SELECT id FROM users WHERE username = ?', [username]);
+    const [existing] = await this._pool.execute('SELECT id FROM users WHERE username = ? AND deleted_at IS NULL', [username]);
     if (existing.length > 0) {
       throw new InvariantError('Gagal menambahkan user. Username sudah digunakan.');
     }
@@ -26,7 +26,7 @@ class UserService {
   }
 
   async getUserByUsername(username) {
-    const query = 'SELECT * FROM users WHERE username = ?';
+    const query = 'SELECT * FROM users WHERE username = ? AND deleted_at IS NULL';
     const [rows] = await this._pool.execute(query, [username]);
     
     if (rows.length === 0) {
@@ -37,7 +37,7 @@ class UserService {
   }
 
   async getUserById(id) {
-    const query = 'SELECT id, username, fullname, role, created_by, created_at FROM users WHERE id = ?';
+    const query = 'SELECT id, username, fullname, role, created_by, created_at FROM users WHERE id = ? AND deleted_at IS NULL';
     const [rows] = await this._pool.execute(query, [id]);
     
     if (rows.length === 0) {
@@ -48,18 +48,18 @@ class UserService {
   }
 
   async getUsers(role, userId) {
-    let query = 'SELECT id, username, fullname, role, created_by, created_at FROM users';
+    let query = 'SELECT id, username, fullname, role, created_by, created_at FROM users WHERE deleted_at IS NULL';
     const params = [];
 
     if (role === 'super_admin') {
-      // Super admin can see all
+      // Super admin can see all active
     } else if (role === 'admin') {
-      // Admin sees users they created (operators)
-      query += ' WHERE created_by = ?';
+      // Admin sees active users they created (operators)
+      query += ' AND created_by = ?';
       params.push(userId);
     } else {
       // Operator sees only themselves
-      query += ' WHERE id = ?';
+      query += ' AND id = ?';
       params.push(userId);
     }
 
@@ -80,7 +80,7 @@ class UserService {
       throw new Error('Anda tidak memiliki akses untuk menghapus user ini');
     }
 
-    const query = 'DELETE FROM users WHERE id = ?';
+    const query = 'UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?';
     await this._pool.execute(query, [id]);
   }
 

@@ -17,7 +17,7 @@ describe('AuthService', () => {
 
   describe('verifyUserCredential', () => {
     it('should return user info if credentials are valid', async () => {
-      const mockUser = { id: 'uuid', username: 'admin', password: 'hashed_password' };
+      const mockUser = { id: 'uuid', username: 'admin', password: 'hashed_password', role: 'admin' };
       userService.getUserByUsername.mockResolvedValue(mockUser);
       
       // Use spyOn for ESM compatibility
@@ -25,18 +25,18 @@ describe('AuthService', () => {
 
       const result = await authService.verifyUserCredential('admin', 'password123');
 
-      expect(result).toEqual({ id: 'uuid', username: 'admin' });
+      expect(result).toEqual({ id: 'uuid', username: 'admin', role: 'admin' });
       expect(compareSpy).toHaveBeenCalled();
       compareSpy.mockRestore();
     });
 
     it('should throw error if password does not match', async () => {
-      const mockUser = { id: 'uuid', username: 'admin', password: 'hashed_password' };
+      const mockUser = { id: 'uuid', username: 'admin', password: 'hashed_password', role: 'admin' };
       userService.getUserByUsername.mockResolvedValue(mockUser);
       
       const compareSpy = jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
 
-      await expect(authService.verifyUserCredential('admin', 'wrong')).rejects.toThrow('Invalid credentials');
+      await expect(authService.verifyUserCredential('admin', 'wrong')).rejects.toThrow('Kredensial yang Anda berikan tidak valid');
       compareSpy.mockRestore();
     });
   });
@@ -48,7 +48,7 @@ describe('AuthService', () => {
 
       const token = authService.generateAccessToken(payload);
 
-      expect(jwt.sign).toHaveBeenCalledWith(payload, 'secret', { expiresIn: '1h' });
+      expect(jwt.sign).toHaveBeenCalledWith(payload, 'secret', { expiresIn: '15m' });
       expect(token).toBe('mock_token');
       signSpy.mockRestore();
     });
