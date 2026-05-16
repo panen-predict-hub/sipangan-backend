@@ -67,14 +67,18 @@ class AlertsService {
     let title = '';
     let message = '';
     
+    const regionQuery = 'SELECT name FROM regions WHERE id = ?';
+    const { rows: regionRows } = await query(regionQuery, [region_id]);
+    const regionName = regionRows.length > 0 ? regionRows[0].name : 'Wilayah Tidak Diketahui';
+
     if (ratio > kritisThreshold) {
        type = 'critical';
        title = 'Peringatan Kritis Harga Komoditas';
-       message = `Harga telah melonjak ${((ratio - 1) * 100).toFixed(2)}% melebihi rata-rata, melampaui batas kritis ${kritis_percentage}%.`;
+       message = `Harga di wilayah ${regionName} telah melonjak ${((ratio - 1) * 100).toFixed(2)}% melebihi rata-rata, melampaui batas kritis ${kritis_percentage}%.`;
     } else if (ratio > waspadaThreshold) {
        type = 'warning';
        title = 'Peringatan Waspada Harga Komoditas';
-       message = `Harga mengalami kenaikan ${((ratio - 1) * 100).toFixed(2)}% melebihi rata-rata, melampaui batas waspada ${waspada_percentage}%.`;
+       message = `Harga di wilayah ${regionName} mengalami kenaikan ${((ratio - 1) * 100).toFixed(2)}% melebihi rata-rata, melampaui batas waspada ${waspada_percentage}%.`;
     } else {
        return null; // no alert needed
     }

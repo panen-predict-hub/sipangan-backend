@@ -96,3 +96,16 @@ CREATE TABLE predictions (
     FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
     UNIQUE KEY unique_prediction (commodity_id, region_id, prediction_date)
 );
+
+-- Create Weather Data table
+CREATE TABLE weather_data (
+    id VARCHAR(36) PRIMARY KEY,
+    region_id VARCHAR(36) NOT NULL,
+    date DATE NOT NULL,
+    temperature DECIMAL(5, 2),
+    humidity DECIMAL(5, 2),
+    weather_condition VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_weather (region_id, date)
+);
