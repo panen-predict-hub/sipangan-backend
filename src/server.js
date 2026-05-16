@@ -11,6 +11,7 @@ import CommoditiesAPI from './api/commodities/index.js';
 import AuthAPI from './api/auth/index.js';
 import UsersAPI from './api/users/index.js';
 import LogsAPI from './api/logs/index.js';
+import WeatherAPI from './api/weather/index.js';
 
 // Services
 import HistoryService from './services/HistoryService.js';
@@ -21,6 +22,7 @@ import CommoditiesService from './services/CommoditiesService.js';
 import UserService from './services/UserService.js';
 import AuthService from './services/AuthService.js';
 import LogService from './services/LogService.js';
+import WeatherService from './services/WeatherService.js';
 
 // Validators
 import AuthValidator from './validator/auth/index.js';
@@ -89,6 +91,7 @@ const mapsService = new MapsService();
 const commoditiesService = new CommoditiesService(logService);
 const userService = new UserService();
 const authService = new AuthService(userService);
+const weatherService = new WeatherService();
 
 // Register API Routes (consistent plugin pattern)
 HistoryAPI.register(app, { historyService });
@@ -99,6 +102,7 @@ CommoditiesAPI.register(app, { commoditiesService });
 AuthAPI.register(app, { authService, validator: AuthValidator });
 UsersAPI.register(app, { userService, logService });
 LogsAPI.register(app, { logService });
+WeatherAPI.register(app, { weatherService });
 
 /**
  * @openapi
