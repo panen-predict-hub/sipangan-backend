@@ -10,11 +10,21 @@ class CommoditiesService {
     this._logService = logService;
   }
 
+  async getCommodityById(id) {
+    const query = 'SELECT * FROM commodities WHERE id = ? AND deleted_at IS NULL';
+    const [rows] = await this._pool.execute(query, [id]);
+    if (rows.length === 0) {
+      throw new NotFoundError('Komoditas tidak ditemukan');
+    }
+    return rows[0];
+  }
+
   async getCommodities() {
     const [rows] = await this._pool.query(`
       SELECT c.*, ct.waspada_percentage, ct.kritis_percentage 
       FROM commodities c
       LEFT JOIN commodity_thresholds ct ON c.id = ct.commodity_id
+      WHERE c.deleted_at IS NULL
     `);
     return rows;
   }
@@ -58,7 +68,7 @@ class CommoditiesService {
 
   async updateCommodity(id, { name, unit }, userId) {
     try {
-      const query = 'UPDATE commodities SET name = ?, unit = ? WHERE id = ?';
+      const query = 'UPDATE commodities SET name = ?, unit = ? WHERE id = ? AND deleted_at IS NULL';
       const [result] = await this._pool.execute(query, [name, unit, id]);
       if (result.affectedRows === 0) {
         throw new NotFoundError('Komoditas tidak ditemukan');
@@ -99,9 +109,13 @@ class CommoditiesService {
   }
 
   async deleteCommodity(id, userId) {
+    // Ambil data komoditas sebelum di soft-delete
+    const commodity = await this.getCommodityById(id);
+
     try {
-      const query = 'DELETE FROM commodities WHERE id = ?';
-      const [result] = await this._pool.execute(query, [id]);
+      const deletedName = `${commodity.name}_deleted_${Date.now()}`;
+      const query = 'UPDATE commodities SET name = ?, deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL';
+      const [result] = await this._pool.execute(query, [deletedName, id]);
       if (result.affectedRows === 0) {
         throw new NotFoundError('Komoditas tidak ditemukan');
       }
@@ -110,7 +124,8 @@ class CommoditiesService {
         await this._logService.addLog({
           userId,
           action: 'DELETE_COMMODITY',
-          targetId: id
+          targetId: id,
+          details: { name: commodity.name, unit: commodity.unit }
         });
       }
     } catch (error) {
