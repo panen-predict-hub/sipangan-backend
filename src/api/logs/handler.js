@@ -20,6 +20,12 @@
  *           example: "UPDATE_PRICE"
  *         target_id:
  *           type: string
+ *         target_username:
+ *           type: string
+ *         target_fullname:
+ *           type: string
+ *         target_role:
+ *           type: string
  *         details:
  *           type: string
  *         created_at:

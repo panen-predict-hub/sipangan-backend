@@ -32,21 +32,22 @@ class LogService {
    */
   async getLogs({ role, userId, page = 1, limit = 50 }) {
     let query = `
-      SELECT al.*, u.username, u.fullname, u.role as user_role 
+      SELECT al.*, u.username, u.fullname, u.role as user_role,
+             t.username as target_username, t.fullname as target_fullname, t.role as target_role
       FROM activity_logs al
       JOIN users u ON al.user_id = u.id
+      LEFT JOIN users t ON al.target_id = t.id
     `;
     const params = [];
 
     if (role === 'super_admin') {
       // Super admin sees everything
     } else if (role === 'admin') {
-      // Admin sees logs of users they created (operators)
-      query += ' WHERE u.created_by = ?';
-      params.push(userId);
+      // Admin sees their own logs AND logs of users they created (operators)
+      query += ' WHERE al.user_id = ? OR u.created_by = ?';
+      params.push(userId, userId);
     } else {
-      // Operators or others can only see their own logs (or nothing, depending on policy)
-      // Based on user request, only admin/super_admin see logs
+      // Operators or others can only see their own logs
       query += ' WHERE al.user_id = ?';
       params.push(userId);
     }

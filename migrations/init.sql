@@ -1,11 +1,14 @@
-
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS commodity_thresholds;
 DROP TABLE IF EXISTS prices;
 DROP TABLE IF EXISTS commodities;
 DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS activity_logs;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS weather_data;
+DROP TABLE IF EXISTS alerts;
+DROP TABLE IF EXISTS authenticators;
 
 -- Create Users table
 CREATE TABLE users (
@@ -15,6 +18,7 @@ CREATE TABLE users (
     fullname VARCHAR(100) NOT NULL,
     role ENUM('super_admin', 'admin', 'operator') DEFAULT 'operator',
     created_by VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -34,14 +38,16 @@ CREATE TABLE regions (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     latitude DECIMAL(10, 8),
-    longitude DECIMAL(11, 8)
+    longitude DECIMAL(11, 8),
+    deleted_at TIMESTAMP NULL DEFAULT NULL
 );
 
 -- Create Commodities table
 CREATE TABLE commodities (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    unit VARCHAR(20) DEFAULT 'kg'
+    unit VARCHAR(20) DEFAULT 'kg',
+    deleted_at TIMESTAMP NULL DEFAULT NULL
 );
 
 -- Create Commodity Thresholds table
