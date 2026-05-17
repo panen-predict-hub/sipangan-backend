@@ -126,7 +126,7 @@ class HistoryHandler {
       const rawOverview = await this._service.getOverview(commodity);
 
       // Logika Aggregasi "Highest-Risk-Level" per Wilayah
-      const statusPriority = { 'aman': 0, 'waspada': 1, 'kritis': 2 };
+      const statusPriority = { 'tanpa data': 0, 'aman': 1, 'waspada': 2, 'kritis': 3 };
 
       const aggregated = rawOverview.reduce((acc, item) => {
         const region = item.region_name;
