@@ -3,9 +3,8 @@ name: Deploy to cPanel
 on:
   push:
     branches:
-      - main # Workflow berjalan otomatis setiap ada push ke branch main
+      - main
 
-# Memaksa runner GitHub menggunakan Node.js 24 agar aman dari error deprecation
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
@@ -18,27 +17,25 @@ jobs:
       uses: actions/checkout@v4
 
     # 1. MEMBUAT FILE .ENV DARI GITHUB SECRETS
-    # Mengambil isi dari Secret ENV_PRODUCTION dan merakitnya menjadi file .env nyata
     - name: Create .env file
       run: |
         echo "${{ secrets.ENV_PRODUCTION }}" > .env
 
-    # 2. MEMBERSIHKAN FILE & FOLDER YANG TIDAK PERLU DI-UPLOAD
-    # Trik ini dilakukan agar folder .git atau .github tidak ikut terkompres, 
-    # sekaligus mencegah error "tar: empty archive" pada step SCP.
-    - name: Clean unnecessary files before upload
+    # 2. SETUP SSH KEY UNTUK NATIVE SFTP
+    - name: Setup SSH Key
       run: |
-        rm -rf .git .github
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -p 22 ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
 
-    # 3. PROSES DEPLOYMENT VIA SCP (Aman & Kompatibel untuk semua cPanel)
-    # Memindahkan seluruh file project Sipangan Backend langsung ke server target.
-    - name: Deploy files via SCP
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22 # Ganti jika cPanel kamu menggunakan port SSH custom (misal: 2222)
-        source: "./*" # Mengambil semua file yang tersisa di runner
-        target: "/home/sublymyi/capstone/sipangan-backend" # Sesuai path asli di cPanel kamu
-        rm: false # Biarkan false agar file lama yang tidak berubah tidak perlu dihapus ulang
+    # 3. PROSES DEPLOYMENT VIA NATIVE SFTP
+    # Menggunakan LFTP/SFTP bawaan Linux yang jauh lebih bersahabat dengan firewall hosting
+    - name: Deploy files via SFTP
+      run: |
+        sudo apt-get update && sudo apt-get install -y lftp
+        lftp -e "set sftp:connect-program 'ssh -a -x -i ~/.ssh/id_rsa'; connect sftp://${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:22; mirror -R --delete --exclude .git/ --exclude .github/ ./ /home/sublymyi/capstone/sipangan-backend/; quit"
+        
+        # PENTING: 
+        # 1. Ganti port "22" di atas jika port SSH cPanel kamu custom.
+        # 2. Ganti "/home/username_cpanel/capstone/sipangan-backend/" dengan path aslimu.
