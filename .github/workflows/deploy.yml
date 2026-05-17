@@ -1,0 +1,42 @@
+name: Deploy to cPanel (With Passphrase)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Langkah Baru: Menjalankan SSH Agent untuk membaca Private Key + Passphrase
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }} # Passphrase dimasukkan di sini
+
+    # Langkah Baru: Menambahkan host cPanel ke dalam known_hosts agar tidak muncul prompt verifikasi
+    - name: Scan Remote Host SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -p 22 ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
+        # Ganti "-p 22" dengan port SSH cPanel kamu jika menggunakan port custom (misal: -p 2222)
+
+    # Melakukan deploy menggunakan rsync standar lewat SSH yang sudah ter-otorisasi
+    - name: Deploy files via rsync
+      run: |
+        rsync -rlgoDzvO --delete \
+          -e "ssh -p 22" \
+          --exclude '/.git/' \
+          --exclude '/.github/' \
+          --exclude '/node_modules/' \
+          ./ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/home/sublymyi/capstone/sipangan-backend/
+        
+        # CATATAN: 
+        # 1. Ganti "-p 22" jika port SSH cPanel kamu berbeda.
+        # 2. Ganti "/home/username_cpanel/public_html/" sesuai dengan path cPanel kamu.
