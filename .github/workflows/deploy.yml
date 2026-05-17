@@ -21,24 +21,14 @@ jobs:
       run: |
         echo "${{ secrets.ENV_PRODUCTION }}" > .env
 
-    # 2. SETUP SSH KEY (Kini jauh lebih bersih karena tanpa passphrase)
-    - name: Setup SSH Key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-
-    # 3. SCAN SSH KEY CPANEL
-    - name: Scan Remote Host SSH Key
-      run: |
-        ssh-keyscan -p 22 ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
-
-    # 4. PROSES DEPLOYMENT VIA RSYNC
-    - name: Deploy files via rsync
-      run: |
-        rsync -rlgoDzvO --delete \
-          -e "ssh -p 22 -i ~/.ssh/id_rsa" \
-          --exclude '/.git/' \
-          --exclude '/.github/' \
-          --exclude '/node_modules/' \
-          ./ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/home/sublymyi/capstone/sipangan-backend/
+    # 2. PROSES DEPLOYMENT VIA SCP (Pengganti rsync)
+    - name: Deploy files via SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22 # Ganti jika cPanel kamu menggunakan port SSH custom
+        source: ",!.git/,!.github/,!node_modules/" # Mengupload semua file kecuali folder ini
+        target: "/home/username_cpanel/capstone/sipangan-backend/" # Sesuaikan path sipangan-backend kamu di sini
+        clean: false # Set ke true jika ingin menghapus semua file lama di cPanel sebelum upload (hati-hati!)
