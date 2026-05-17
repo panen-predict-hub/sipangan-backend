@@ -7,21 +7,23 @@
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=white)
 
-**SIPANGAN** (Sistem Informasi Pangan) Backend is a robust RESTful API built to power the harvest prediction hub. It provides comprehensive services for user authentication, commodity management, price prediction, mapping, and historical data analysis.
+**SIPANGAN** (Sistem Informasi Pangan) Backend is a robust RESTful API built to power the harvest prediction hub. It provides comprehensive services for user authentication, commodity management, price prediction, mapping, weather forecasting, and historical data analysis.
 
 ## 🚀 Features
 
 - **🔒 Secure Authentication**: Multi-layered security with JWT (Access & Refresh Tokens) and API Key validation.
 - **👑 Hierarchical Admin Management**: Multi-level roles (Super Admin, Admin, Operator) with managed permissions.
 - **🛡️ Rate Limiting**: Brute-force protection on sensitive routes.
-- **📜 Automated Activity Logging**: Audit trail for all critical data changes (Audit Trail).
-- **⚡ Caching**: Integrated Redis caching for optimized performance.
-- **📊 Commodity Management**: CRUD operations for various food commodities.
+- **📜 Automated Activity & Audit Logging**: Complete audit trail with Soft Delete capability (`is_deleted`).
+- **⚡ Caching & Invalidation**: Integrated Redis caching with automatic cache invalidation upon data changes.
+- **📊 Commodity & Threshold Management**: CRUD operations for various food commodities with automated threshold checks.
 - **🔮 Prediction Engine**: Integration with FastAPI-based AI services for harvest and price prediction.
-- **🗺️ Map Services**: GeoJSON data management for agricultural mapping.
-- **📜 Swagger Documentation**: Interactive API documentation protected by basic authentication.
-- **🧪 Unit & Integration Testing**: Comprehensive test suite using Jest and Supertest.
-- **🆔 UUID v4**: Modern unique identifiers for all database records.
+- **🗺️ Map & Region Services**: GeoJSON data management for agricultural mapping.
+- **🌤️ Weather Forecast Integration**: OpenWeatherMap 5-Day / 3-Hour forecast aggregation (13:00 WIB daytime sample) with Redis caching and secure manual sync trigger.
+- **🚨 Regional Context Alerts**: Automated price alert notifications enriched with specific regional location data.
+- **📜 Swagger Documentation**: Interactive OpenAPI 3.0 documentation protected by basic authentication.
+- **🧪 Unit & Integration Testing**: Comprehensive test suite using Jest.
+- **🆔 Modern Identifiers**: UUID v4 for all database records.
 
 ## 🛠️ Tech Stack
 
@@ -32,7 +34,7 @@
 - **Security**: Bcrypt.js, Express Rate Limit
 - **Validation**: Joi
 - **Testing**: Jest, Supertest
-- **Documentation**: Swagger UI, OpenAPI 3.0
+- **Documentation**: Swagger UI, OpenAPI 3.0, Swagger JsDoc
 
 ## 📋 Prerequisites
 
@@ -117,14 +119,17 @@ We use Jest and Supertest for testing.
 │   │   ├── 📁 auth         # Authentication (Login, Register, Token)
 │   │   ├── 📁 commodities  # Commodity CRUD operations
 │   │   ├── 📁 history      # Historical data analytics
+│   │   ├── 📁 logs         # Activity & Audit logging
 │   │   ├── 📁 maps         # GeoJSON agricultural mapping
-│   │   └── 📁 predict      # AI Prediction integration
-│   │       ├── 📄 handler.js # Controller logic
-│   │       ├── 📄 index.js   # Module entry point
-│   │       └── 📄 routes.js  # Route definitions
+│   │   ├── 📁 predict      # AI Prediction integration
+│   │   └── 📁 weather      # Weather Forecast & Sync API
 │   ├── 📁 config           # Service configurations (DB, Redis, Swagger)
 │   ├── 📁 middleware       # Express middlewares (Auth, Cache, Rate-limit)
-│   ├── 📁 services         # Business Logic Layer (DB queries)
+│   ├── 📁 services         # Business Logic Layer (DB queries & Services)
+│   │   ├── 📄 AlertsService.js
+│   │   ├── 📄 CommoditiesService.js
+│   │   ├── 📄 LogService.js
+│   │   └── 📄 WeatherService.js
 │   ├── 📁 utils            # Utilities & Custom Error Classes
 │   ├── 📁 validator        # Joi request validation schemas
 │   └── 📄 server.js        # Main server entry point
