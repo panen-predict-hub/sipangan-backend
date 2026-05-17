@@ -7,7 +7,7 @@ class WeatherService {
     this.baseUrl = 'https://api.openweathermap.org/data/2.5';
   }
 
-  // Fetch cuaca dari openweathermap dan simpan ke database
+  // Fetch cuaca dari openweathermap dan simpan ke database (Hanya data hari ini/current weather)
   async syncWeatherForRegion(regionId, lat, lng) {
     if (!this.apiKey) {
       console.warn('WEATHER_API_KEY is not set in environment variables');
@@ -15,48 +15,39 @@ class WeatherService {
     }
 
     try {
-      // Mengambil data forecast 5 hari (tiap 3 jam)
-      const response = await fetch(`${this.baseUrl}/forecast?lat=${lat}&lon=${lng}&appid=${this.apiKey}&units=metric`);
+      // Mengambil data cuaca saat ini (Current Weather) untuk hasil yang lebih akurat hari ini
+      const response = await fetch(`${this.baseUrl}/weather?lat=${lat}&lon=${lng}&appid=${this.apiKey}&units=metric`);
       if (!response.ok) {
         throw new Error(`Weather API Error: ${response.statusText}`);
       }
 
       const data = await response.json();
-      const dailyData = {};
 
-      // Agregasi atau ambil satu sampel per hari (misal jam 12 siang)
-      data.list.forEach(item => {
-        // item.dt_txt format: "2023-10-25 12:00:00"
-        const date = item.dt_txt.split(' ')[0];
-        const time = item.dt_txt.split(' ')[1];
+      // Mendapatkan tanggal hari ini (Zona Waktu WIB / Asia/Jakarta)
+      const dateObj = new Date();
+      dateObj.setHours(dateObj.getUTCHours() + 7); // Offset UTC+7
+      const today = dateObj.toISOString().split('T')[0];
 
-        // Pilih sampel 06:00:00 UTC (setara pukul 13:00 WIB / 1 siang) untuk mewakili hari tersebut
-        // Jika belum ada data untuk tanggal ini, simpan sementara
-        if (!dailyData[date] || time === '06:00:00') {
-          dailyData[date] = {
-            temperature: item.main.temp,
-            humidity: item.main.humidity,
-            weather_condition: item.weather[0].main // e.g. "Rain", "Clear"
-          };
-        }
-      });
+      const weather = {
+        temperature: data.main.temp,
+        humidity: data.main.humidity,
+        weather_condition: data.weather[0].main // e.g. "Rain", "Clear", "Clouds"
+      };
 
       // Simpan ke database
-      const insertPromises = Object.entries(dailyData).map(async ([date, weather]) => {
-        const id = uuidv4();
-        const insertQuery = `
-          INSERT INTO weather_data (id, region_id, date, temperature, humidity, weather_condition)
-          VALUES (?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-            temperature = VALUES(temperature),
-            humidity = VALUES(humidity),
-            weather_condition = VALUES(weather_condition)
-        `;
-        return pool.query(insertQuery, [id, regionId, date, weather.temperature, weather.humidity, weather.weather_condition]);
-      });
+      const id = uuidv4();
+      const insertQuery = `
+        INSERT INTO weather_data (id, region_id, date, temperature, humidity, weather_condition)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          temperature = VALUES(temperature),
+          humidity = VALUES(humidity),
+          weather_condition = VALUES(weather_condition)
+      `;
+      
+      await pool.query(insertQuery, [id, regionId, today, weather.temperature, weather.humidity, weather.weather_condition]);
 
-      await Promise.all(insertPromises);
-      return { success: true, count: Object.keys(dailyData).length };
+      return { success: true, count: 1 };
 
     } catch (error) {
       console.error(`Error syncing weather for region ${regionId}:`, error);
