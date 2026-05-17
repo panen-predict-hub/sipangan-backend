@@ -154,8 +154,13 @@ class HistoryService {
       const percentChange = previous !== 0 ? (diff / previous) * 100 : 0;
       
       let trend = 'stable';
-      if (percentChange > 2) trend = 'up';
-      else if (percentChange < -2) trend = 'down';
+      if (!row.current_price || isNaN(current) || current === 0) {
+        trend = 'none';
+      } else if (percentChange > 2) {
+        trend = 'up';
+      } else if (percentChange < -2) {
+        trend = 'down';
+      }
 
       // Status Calculation
       const rawStatus = this._calculateStatus(
