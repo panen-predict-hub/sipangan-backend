@@ -1,9 +1,13 @@
-name: Deploy to cPanel (With Passphrase)
+name: Deploy to cPanel
 
 on:
   push:
     branches:
-      - main
+      - main # Workflow akan berjalan setiap kali kamu push ke branch main
+
+# Memaksa runner GitHub menggunakan Node.js 24 agar aman dari error deprecation
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   deploy:
@@ -13,21 +17,31 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # Langkah Baru: Menjalankan SSH Agent untuk membaca Private Key + Passphrase
+    # 1. MEMBUAT FILE .ENV DARI GITHUB SECRETS
+    # Langkah ini akan mengambil seluruh isi ENV_PRODUCTION yang kamu buat di GitHub Secrets 
+    # dan mengubahnya menjadi file .env nyata di dalam server virtual GitHub sebelum dideploy.
+    - name: Create .env file
+      run: |
+        echo "${{ secrets.ENV_PRODUCTION }}" > .env
+
+    # 2. SETUP SSH AGENT DENGAN PASSPHRASE
     - name: Setup SSH Agent
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }} # Passphrase dimasukkan di sini
+      env:
+        SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
-    # Langkah Baru: Menambahkan host cPanel ke dalam known_hosts agar tidak muncul prompt verifikasi
+    # 3. SCAN SSH KEY CPANEL
+    # Mengonfirmasi identitas server cPanel agar proses transfer tidak terhenti di tengah jalan.
     - name: Scan Remote Host SSH Key
       run: |
         mkdir -p ~/.ssh
         ssh-keyscan -p 22 ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
-        # Ganti "-p 22" dengan port SSH cPanel kamu jika menggunakan port custom (misal: -p 2222)
+        # Catatan: Ganti "-p 22" jika cPanel kamu menggunakan port SSH custom (misal: -p 2222)
 
-    # Melakukan deploy menggunakan rsync standar lewat SSH yang sudah ter-otorisasi
+    # 4. PROSES DEPLOYMENT VIA RSYNC
+    # File .env yang dibuat pada langkah pertama otomatis akan ikut terupload ke cPanel.
     - name: Deploy files via rsync
       run: |
         rsync -rlgoDzvO --delete \
@@ -37,6 +51,6 @@ jobs:
           --exclude '/node_modules/' \
           ./ ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/home/sublymyi/capstone/sipangan-backend/
         
-        # CATATAN: 
-        # 1. Ganti "-p 22" jika port SSH cPanel kamu berbeda.
-        # 2. Ganti "/home/username_cpanel/public_html/" sesuai dengan path cPanel kamu.
+        # PENTING: 
+        # 1. Ganti "-p 22" jika port SSH cPanel kamu custom.
+        # 2. Ganti "/home/username_cpanel/public_html/" sesuai dengan path asli folder website kamu di cPanel.
