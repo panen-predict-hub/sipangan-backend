@@ -166,10 +166,11 @@ class HistoryService {
         row.kritis_percentage
       );
       
-      // Map to user-requested status: aman, waspada, kritis
-      let status = 'aman';
+      // Map to user-requested status: tanpa data, aman, waspada, kritis
+      let status = 'tanpa data';
       if (rawStatus === 'kritis') status = 'kritis';
       else if (rawStatus === 'waspada') status = 'waspada';
+      else if (rawStatus === 'aman' || rawStatus === 'normal') status = 'aman';
 
       return {
         region_id: row.region_id,
@@ -188,10 +189,10 @@ class HistoryService {
   }
 
   _calculateStatus(current, predicted, average, waspadaPct = 10, kritisPct = 25) {
-    if (!average) return 'normal';
+    if (!average || isNaN(average) || average === 0 || isNaN(current) || current === 0) return 'tanpa data';
 
     const getLevel = (price, avg) => {
-      if (price === null || price === undefined) return -1; // Ignore if no data
+      if (price === null || price === undefined || isNaN(price) || price === 0) return -1; // Ignore if no data
       const ratio = price / avg;
       
       const waspadaThreshold = 1 + (parseFloat(waspadaPct) / 100);
@@ -210,8 +211,8 @@ class HistoryService {
     const highestLevel = Math.max(currentLevel, predictedLevel);
 
     const statuses = ['aman', 'normal', 'waspada', 'kritis'];
-    // Fallback to 'aman' if for some reason highestLevel is -1
-    return statuses[highestLevel] || 'aman';
+    // Fallback to 'tanpa data' if for some reason highestLevel is -1
+    return statuses[highestLevel] || 'tanpa data';
   }
 
   async addPrice({ commodity_id, region_id, price, date }, userId) {

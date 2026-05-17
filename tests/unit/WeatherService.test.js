@@ -55,18 +55,8 @@ describe('WeatherService', () => {
 
     it('should fetch weather and insert into database', async () => {
       const mockApiResponse = {
-        list: [
-          {
-            dt_txt: '2023-10-25 09:00:00',
-            main: { temp: 30, humidity: 70 },
-            weather: [{ main: 'Clouds' }],
-          },
-          {
-            dt_txt: '2023-10-25 12:00:00',
-            main: { temp: 32, humidity: 65 },
-            weather: [{ main: 'Clear' }],
-          },
-        ],
+        main: { temp: 30, humidity: 70 },
+        weather: [{ main: 'Clouds' }],
       };
 
       global.fetch.mockResolvedValueOnce({
@@ -79,7 +69,7 @@ describe('WeatherService', () => {
       const result = await weatherService.syncWeatherForRegion('region-1', -7.250445, 112.768845);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.openweathermap.org/data/2.5/forecast?lat=-7.250445&lon=112.768845&appid=test-api-key&units=metric'
+        'https://api.openweathermap.org/data/2.5/weather?lat=-7.250445&lon=112.768845&appid=test-api-key&units=metric'
       );
       expect(pool.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual({ success: true, count: 1 });
