@@ -20,7 +20,7 @@ class WeatherService {
       if (!response.ok) {
         throw new Error(`Weather API Error: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       const dailyData = {};
 
@@ -30,9 +30,9 @@ class WeatherService {
         const date = item.dt_txt.split(' ')[0];
         const time = item.dt_txt.split(' ')[1];
 
-        // Pilih sampel jam 12:00:00 untuk mewakili hari tersebut
+        // Pilih sampel 06:00:00 UTC (setara pukul 13:00 WIB / 1 siang) untuk mewakili hari tersebut
         // Jika belum ada data untuk tanggal ini, simpan sementara
-        if (!dailyData[date] || time === '12:00:00') {
+        if (!dailyData[date] || time === '06:00:00') {
           dailyData[date] = {
             temperature: item.main.temp,
             humidity: item.main.humidity,
@@ -47,7 +47,7 @@ class WeatherService {
         const insertQuery = `
           INSERT INTO weather_data (id, region_id, date, temperature, humidity, weather_condition)
           VALUES (?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE 
+          ON DUPLICATE KEY UPDATE
             temperature = VALUES(temperature),
             humidity = VALUES(humidity),
             weather_condition = VALUES(weather_condition)
@@ -67,7 +67,7 @@ class WeatherService {
   // Trigger sync untuk semua region
   async syncAllRegions() {
     const { rows: regions } = await query("SELECT id, latitude as lat, longitude as lng FROM regions WHERE latitude IS NOT NULL AND longitude IS NOT NULL");
-    
+
     const results = [];
     for (const region of regions) {
       const result = await this.syncWeatherForRegion(region.id, region.lat, region.lng);
@@ -79,8 +79,8 @@ class WeatherService {
   // Mengambil data cuaca yang tersimpan di database untuk region tertentu
   async getWeatherByRegion(regionId) {
     const q = `
-      SELECT date, temperature, humidity, weather_condition 
-      FROM weather_data 
+      SELECT date, temperature, humidity, weather_condition
+      FROM weather_data
       WHERE region_id = ? AND date >= CURDATE()
       ORDER BY date ASC
     `;
