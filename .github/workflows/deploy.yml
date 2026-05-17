@@ -40,5 +40,5 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22 # Ganti jika cPanel kamu menggunakan port SSH custom (misal: 2222)
         source: "./*" # Mengambil semua file yang tersisa di runner
-        target: "/home/username_cpanel/capstone/sipangan-backend" # Sesuai path asli di cPanel kamu
+        target: "/home/sublymyi/capstone/sipangan-backend" # Sesuai path asli di cPanel kamu
         rm: false # Biarkan false agar file lama yang tidak berubah tidak perlu dihapus ulang
