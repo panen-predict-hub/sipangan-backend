@@ -1,3 +1,5 @@
+import { clearCache } from '../../middleware/cache.js';
+
 class WeatherHandler {
   constructor(weatherService) {
     this._weatherService = weatherService;
@@ -10,7 +12,7 @@ class WeatherHandler {
     try {
       const { regionId } = req.params;
       const weatherData = await this._weatherService.getWeatherByRegion(regionId);
-      
+
       res.status(200).json({
         status: 'success',
         data: {
@@ -25,6 +27,8 @@ class WeatherHandler {
   async syncWeatherHandler(req, res, next) {
     try {
       const results = await this._weatherService.syncAllRegions();
+      await clearCache('cache:*/weather/region*');
+
       res.status(200).json({
         status: 'success',
         message: 'Weather synchronization completed',
