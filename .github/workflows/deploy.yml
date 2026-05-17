@@ -21,7 +21,7 @@ jobs:
       run: |
         echo "${{ secrets.ENV_PRODUCTION }}" > .env
 
-    # 2. SETUP SSH KEY UNTUK NATIVE SFTP
+    # 2. SETUP SSH KEY & KNOWN HOSTS
     - name: Setup SSH Key
       run: |
         mkdir -p ~/.ssh
@@ -29,13 +29,22 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -p 22 ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
 
-    # 3. PROSES DEPLOYMENT VIA NATIVE SFTP
-    # Menggunakan LFTP/SFTP bawaan Linux yang jauh lebih bersahabat dengan firewall hosting
-    - name: Deploy files via SFTP
+    # 3. PROSES DEPLOYMENT VIA NATIVE SFTP (BATCH MODE)
+    # Langkah ini murni menggunakan perintah sftp bawaan Linux.
+    # Kita menggunakan opsi -b (batch mode) agar sftp berjalan otomatis tanpa meminta prompt interaktif.
+    # Perintah 'put -r' akan mengupload seluruh file dan folder secara rekursif ke cPanel.
+    - name: Deploy files via Native SFTP
       run: |
-        sudo apt-get update && sudo apt-get install -y lftp
-        lftp -e "set sftp:connect-program 'ssh -a -x -i ~/.ssh/id_rsa'; connect sftp://${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:22; mirror -R --delete --exclude .git/ --exclude .github/ ./ /home/sublymyi/capstone/sipangan-backend/; quit"
+        # Membuat file instruksi untuk sftp
+        cat <<EOF > sftp_batch.txt
+        progress
+        cd /home/sublymyi/capstone/sipangan-backend
+        put -r ./*
+        bye
+        EOF
         
-        # PENTING: 
-        # 1. Ganti port "22" di atas jika port SSH cPanel kamu custom.
-        # 2. Ganti "/home/username_cpanel/capstone/sipangan-backend/" dengan path aslimu.
+        # Mengeksekusi sftp secara non-interaktif menggunakan Private Key
+        sftp -b sftp_batch.txt -P 22 -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}
+        
+        # Membersihkan file batch setelah selesai
+        rm sftp_batch.txt
